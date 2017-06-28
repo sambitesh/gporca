@@ -1414,6 +1414,15 @@ namespace gpdxl
 				CParseHandlerManager *pphm,
 				CParseHandlerBase *pphRoot
 				);
+		
+			// construct a logical value scan parse handler
+			static
+			CParseHandlerBase *PphLgValueScan
+				(
+				IMemoryPool *pmp,
+				CParseHandlerManager *pphm,
+				CParseHandlerBase *pphRoot
+				);
 
 			// construct a logical select parse handler
 			static

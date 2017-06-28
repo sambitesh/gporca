@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dxl:DXLMessage xmlns:dxl="http://greenplum.com/dxl/2010/12/">
+  <dxl:Query>
+    <dxl:OutputColumns>
+      <dxl:Ident ColId="1" ColName="num" TypeMdid="0.23.1.0"/>
+      <dxl:Ident ColId="2" ColName="letter" TypeMdid="0.25.1.0"/>
+    </dxl:OutputColumns>
+    <dxl:CTEList/>
+    <dxl:ValueScan InputColumns="1,2;3,4;5,6" CastAcrossInputs="false">
+      <dxl:Columns>
+        <dxl:Column ColId="1" Attno="1" ColName="column1" TypeMdid="0.23.1.0"/>
+        <dxl:Column ColId="2" Attno="2" ColName="column2" TypeMdid="0.25.1.0"/>
+      </dxl:Columns>
+      <dxl:LogicalConstTable>
+        <dxl:Columns>
+          <dxl:Column ColId="1" Attno="1" ColName="column1" TypeMdid="0.23.1.0"/>
+          <dxl:Column ColId="2" Attno="2" ColName="column2" TypeMdid="0.25.1.0"/>
+        </dxl:Columns>
+        <dxl:ConstTuple>
+          <dxl:Datum TypeMdid="0.23.1.0" IsNull="false" IsByValue="true" Value="1"/>
+          <dxl:Datum TypeMdid="0.25.1.0" IsNull="false" IsByValue="false" Value="AAAAB29uZQ==" LintValue="565748580"/>
+        </dxl:ConstTuple>
+      </dxl:LogicalConstTable>
+      <dxl:LogicalConstTable>
+        <dxl:Columns>
+          <dxl:Column ColId="3" Attno="1" ColName="column1" TypeMdid="0.23.1.0"/>
+          <dxl:Column ColId="4" Attno="2" ColName="column2" TypeMdid="0.25.1.0"/>
+        </dxl:Columns>
+        <dxl:ConstTuple>
+          <dxl:Datum TypeMdid="0.23.1.0" IsNull="false" IsByValue="true" Value="2"/>
+          <dxl:Datum TypeMdid="0.25.1.0" IsNull="false" IsByValue="false" Value="AAAAB3R3bw==" LintValue="668066604"/>
+        </dxl:ConstTuple>
+      </dxl:LogicalConstTable>
+      <dxl:LogicalConstTable>
+        <dxl:Columns>
+          <dxl:Column ColId="5" Attno="1" ColName="column1" TypeMdid="0.23.1.0"/>
+          <dxl:Column ColId="6" Attno="2" ColName="column2" TypeMdid="0.25.1.0"/>
+        </dxl:Columns>
+        <dxl:ConstTuple>
+          <dxl:Datum TypeMdid="0.23.1.0" IsNull="false" IsByValue="true" Value="3"/>
+          <dxl:Datum TypeMdid="0.25.1.0" IsNull="false" IsByValue="false" Value="AAAACXRocmVl" LintValue="458269486"/>
+        </dxl:ConstTuple>
+      </dxl:LogicalConstTable>
+    </dxl:ValueScan>
+  </dxl:Query>
+</dxl:DXLMessage>
