@@ -673,6 +673,8 @@ CDXLTokens::Init
 			{EdxltokenLogicalDifference, GPOS_WSZ_LIT("Difference")},
 			{EdxltokenLogicalDifferenceAll, GPOS_WSZ_LIT("DifferenceAll")},
 
+			{EdxltokenLogicalValuesGet, GPOS_WSZ_LIT("LogicalValuesGet")},
+
 			{EdxltokenIndexDescr, GPOS_WSZ_LIT("IndexDescriptor")},
 			{EdxltokenIndexName, GPOS_WSZ_LIT("IndexName")},
 			{EdxltokenScalarIndexCondList, GPOS_WSZ_LIT("IndexCondList")},
