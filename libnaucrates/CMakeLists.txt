@@ -214,7 +214,9 @@ add_library(naucrates
             src/operators/CDXLLogicalSelect.cpp
             include/naucrates/dxl/operators/CDXLLogicalSetOp.h
             src/operators/CDXLLogicalSetOp.cpp
-            include/naucrates/dxl/operators/CDXLLogicalTVF.h
+	    include/naucrates/dxl/operators/CDXLLogicalValueScan.h
+	    src/operators/CDXLLogicalValueScan.cpp
+	    include/naucrates/dxl/operators/CDXLLogicalTVF.h
             src/operators/CDXLLogicalTVF.cpp
             include/naucrates/dxl/operators/CDXLLogicalUpdate.h
             src/operators/CDXLLogicalUpdate.cpp

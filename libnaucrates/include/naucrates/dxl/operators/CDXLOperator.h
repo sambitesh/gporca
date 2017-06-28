@@ -26,6 +26,7 @@ namespace gpdxl
 	class CDXLNode;
 	class CXMLSerializer;
 	
+	// If adding a new operator, add it at the end
 	enum Edxlopid
 	{
 		EdxlopLogicalGet,
@@ -163,7 +164,9 @@ namespace gpdxl
 		
 		EdxlopPhysicalAssert,
 		
-		EdxlopSentinel
+		EdxlopSentinel,
+
+		EdxlopLogicalValueScan
 	};
 	
 	enum Edxloptype
