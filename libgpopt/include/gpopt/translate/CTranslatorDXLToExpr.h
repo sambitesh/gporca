@@ -143,18 +143,21 @@ namespace gpopt
 			// translate a DXL logical project into an expr logical project
 			CExpression *PexprLogicalProject(const CDXLNode *pdxlnLgProject);
 
-			// translate a DXL logical window into an expr logical project
-			CExpression *PexprLogicalSeqPr(const CDXLNode *pdxlnLgProject);
+			// translate a DXL logical sequence into an expr logical sequence
+			CExpression *PexprLogicalSeqPr(const CDXLNode *pdxlnLgSeqPr);
 
 			// create the array of column reference used in the partition by column
 			// list of a window specification
 			DrgPcr *PdrgpcrPartitionByCol(const DrgPul *pdrgpulPartCol);
 
-			// translate a DXL logical window into an expr logical project
-			CExpression *PexprCreateWindow(const CDXLNode *pdxlnLgProject);
+			// translate a DXL logical window into an expr logical window
+			CExpression *PexprCreateWindow(const CDXLNode *pdxlnLgCreateWindow);
 
 			// translate a DXL logical set op into an expr logical set op
-			CExpression *PexprLogicalSetOp(const CDXLNode *pdxlnLgProject);
+			CExpression *PexprLogicalSetOp(const CDXLNode *pdxlnLgSetOp);
+
+			// translate a DXL logical value scan into an expr logical valuescan
+			CExpression *PexprLogicalValueScan(const CDXLNode *pdxlnLgValueScan);
 
 			// return a project element on a cast expression
 			CExpression *PexprCastPrjElem
@@ -174,10 +177,23 @@ namespace gpopt
 				DrgPcr **ppdrgpcrChild, // output: generated child input columns
 				DrgPexpr **ppdrgpexprChildProjElems // output: project elements to remap child input columns
 				);
+		
+			// build expression and columns of SetOpChild
+			void BuildValueScanChild
+				(
+				const CDXLNode *pdxlnValueScan,
+				ULONG ulChildIndex,
+				CExpression **ppexprChild, // output: generated child expression
+				DrgPcr **ppdrgpcrChild, // output: generated child input columns
+				DrgPexpr **ppdrgpexprChildProjElems // output: project elements to remap child input columns
+				);
 
 			// preprocess inputs to the set operator (adding casts to columns  when needed)
 			DrgPexpr *PdrgpexprPreprocessSetOpInputs(const CDXLNode *pdxln, DrgDrgPcr *pdrgdrgpcrInput, DrgPul *pdrgpulOutput);
-
+		
+			// preprocess inputs to the set operator (adding casts to columns  when needed)
+			DrgPexpr *PdrgpexprPreprocessValueScanInputs(const CDXLNode *pdxln, DrgDrgPcr *pdrgdrgpcrInput, DrgPul *pdrgpulOutput);
+ 
 			// create new column reference and add to the hashmap maintaining
 			// the mapping between DXL ColIds and column reference.
 			CColRef *PcrCreate
@@ -198,7 +214,7 @@ namespace gpopt
 			CExpression *PexprLogicalTVF(const CDXLNode *pdxlnLgTVF);
 
 			// translate a DXL logical group by into an expr logical group by
-			CExpression *PexprLogicalGroupBy(const CDXLNode *pdxlnLgSelect);
+			CExpression *PexprLogicalGroupBy(const CDXLNode *pdxlnLgGroupBy);
 			
 			// translate a DXL limit node into an expr logical limit expression
 			CExpression *PexprLogicalLimit(const CDXLNode *pdxlnLgLimit);

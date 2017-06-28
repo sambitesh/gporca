@@ -183,6 +183,7 @@ CTranslatorDXLToExpr::InitTranslators()
 		{EdxlopScalarArrayComp, 	&gpopt::CTranslatorDXLToExpr::PexprArrayCmp},
 		{EdxlopScalarArrayRef, 		&gpopt::CTranslatorDXLToExpr::PexprArrayRef},
 		{EdxlopScalarArrayRefIndexList, &gpopt::CTranslatorDXLToExpr::PexprArrayRefIndexList},
+		{EdxlopLogicalValueScan,	&gpopt::CTranslatorDXLToExpr::PexprLogicalValueScan},
 	};
 
 	const ULONG ulTranslators = GPOS_ARRAY_SIZE(rgTranslators);
@@ -703,6 +704,39 @@ CTranslatorDXLToExpr::PexprLogicalSetOp
 	return GPOS_NEW(m_pmp) CExpression(m_pmp, pop, pdrgpexpr);
 }
 
+// Create a logical value scan from a DXL value scan
+CExpression *
+CTranslatorDXLToExpr::PexprLogicalValueScan
+(
+	const CDXLNode *pdxln
+	)
+{
+	GPOS_ASSERT(NULL != pdxln);
+	
+	CDXLLogicalValueScan *pdxlop = CDXLLogicalValueScan::PdxlopConvert(pdxln->Pdxlop());
+	
+#ifdef GPOS_DEBUG
+	const ULONG ulArity = pdxln->UlArity();
+#endif // GPOS_DEBUG
+	
+	GPOS_ASSERT(ulArity == pdxlop->UlChildren());
+	
+	// array of input column reference
+	DrgDrgPcr *pdrgdrgpcrInput = GPOS_NEW(m_pmp) DrgDrgPcr(m_pmp);
+	// array of output column descriptors
+	DrgPul *pdrgpulOutput = GPOS_NEW(m_pmp) DrgPul(m_pmp);
+	
+	DrgPexpr *pdrgpexpr = PdrgpexprPreprocessValueScanInputs(pdxln, pdrgdrgpcrInput, pdrgpulOutput);
+	
+	// create an array of output column references
+	DrgPcr *pdrgpcrOutput = CTranslatorDXLToExprUtils::Pdrgpcr(m_pmp, m_phmulcr, pdrgpulOutput /*array of colids of the first child*/);
+	
+	pdrgpulOutput->Release();
+	
+	CLogicalSetOp *pop = GPOS_NEW(m_pmp) CLogicalUnionAll(m_pmp, pdrgpcrOutput, pdrgdrgpcrInput);
+
+	return GPOS_NEW(m_pmp) CExpression(m_pmp, pop, pdrgpexpr);
+}
 
 //---------------------------------------------------------------------------
 //	@function:
@@ -857,6 +891,114 @@ CTranslatorDXLToExpr::BuildSetOpChild
 	}
 }
 
+// Build expression and input columns of ValueScan Child
+//
+//---------------------------------------------------------------------------
+void
+CTranslatorDXLToExpr::BuildValueScanChild
+(
+	const CDXLNode *pdxlnValueScan,
+	ULONG ulChildIndex,
+	CExpression **ppexprChild, // output: generated child expression
+	DrgPcr **ppdrgpcrChild, // output: generated child input columns
+	DrgPexpr **ppdrgpexprChildProjElems // output: project elements to remap child input columns
+)
+{
+	GPOS_ASSERT(NULL != pdxlnValueScan);
+	GPOS_ASSERT(NULL != ppexprChild);
+	GPOS_ASSERT(NULL != ppdrgpcrChild);
+	GPOS_ASSERT(NULL != ppdrgpexprChildProjElems);
+	GPOS_ASSERT(NULL == *ppdrgpexprChildProjElems);
+	
+	const CDXLLogicalValueScan *pdxlop = CDXLLogicalValueScan::PdxlopConvert(pdxlnValueScan->Pdxlop());
+	const CDXLNode *pdxlnChild = (*pdxlnValueScan)[ulChildIndex];
+	
+	// array of project elements to remap child input columns
+	*ppdrgpexprChildProjElems = GPOS_NEW(m_pmp) DrgPexpr(m_pmp);
+	
+	// array of child input column
+	*ppdrgpcrChild = GPOS_NEW(m_pmp) DrgPcr(m_pmp);
+	
+	// translate child
+	*ppexprChild = PexprLogical(pdxlnChild);
+	
+	const DrgPul *pdrgpulInput = pdxlop->Pdrgpul(ulChildIndex);
+	const ULONG ulInputCols = pdrgpulInput->UlLength();
+	CColRefSet *pcrsChildOutput = CDrvdPropRelational::Pdprel((*ppexprChild)->PdpDerive())->PcrsOutput();
+	for (ULONG ulColPos = 0; ulColPos < ulInputCols; ulColPos++)
+	{
+		// column identifier of the input column
+		ULONG ulColId = *(*pdrgpulInput)[ulColPos];
+		const CColRef *pcr = PcrLookup(m_phmulcr, ulColId);
+		
+		// corresponding output column descriptor
+		const CDXLColDescr *pdxlcdOutput = pdxlop->Pdxlcd(ulColPos);
+		
+		// check if a cast function needs to be introduced
+		IMDId *pmdidSource = pcr->Pmdtype()->Pmdid();
+		IMDId *pmdidDest = pdxlcdOutput->PmdidType();
+		if (FCastingUnknownType(pmdidSource, pmdidDest))
+		{
+			GPOS_RAISE(gpopt::ExmaGPOPT, gpopt::ExmiUnsupportedOp, GPOS_WSZ_LIT("Casting of columns of unknown data type"));
+		}
+		
+		const IMDType *pmdtype = m_pmda->Pmdtype(pmdidDest);
+		BOOL fEqualTypes = IMDId::FEqualMDId(pmdidSource, pmdidDest);
+		BOOL fFirstChild = (0 == ulChildIndex);
+		
+		if (!pcrsChildOutput->FMember(pcr))
+		{
+			// input column is an outer reference, add a project element for input column
+			
+			// add the colref to the hash map between DXL ColId and colref as they can used above the setop
+			CColRef *pcrNew = PcrCreate(pcr, pmdtype, fFirstChild, pdxlcdOutput->UlID());
+			(*ppdrgpcrChild)->Append(pcrNew);
+			
+			CExpression *pexprChildProjElem = NULL;
+			if (fEqualTypes)
+			{
+				// project child input column
+				pexprChildProjElem =
+				GPOS_NEW(m_pmp) CExpression
+				(
+				 m_pmp,
+				 GPOS_NEW(m_pmp) CScalarProjectElement(m_pmp, pcrNew),
+				 GPOS_NEW(m_pmp) CExpression(m_pmp, GPOS_NEW(m_pmp) CScalarIdent(m_pmp, pcr))
+				 );
+			}
+			else
+			{
+				// introduce cast expression
+				pexprChildProjElem = PexprCastPrjElem(pmdidSource, pmdidDest, pcr, pcrNew);
+			}
+			
+			(*ppdrgpexprChildProjElems)->Append(pexprChildProjElem);
+			continue;
+		}
+		
+		if (fEqualTypes)
+		{
+			// no cast function needed, add the colref to the array of input colrefs
+			(*ppdrgpcrChild)->Append(const_cast<CColRef*>(pcr));
+			continue;
+		}
+		
+		if (fFirstChild)
+		{
+			// add the colref to the hash map between DXL ColId and colref as they can used above the setop
+			CColRef *pcrNew = PcrCreate(pcr, pmdtype, fFirstChild, pdxlcdOutput->UlID());
+			(*ppdrgpcrChild)->Append(pcrNew);
+			
+			// introduce cast expression for input column
+			CExpression *pexprChildProjElem = PexprCastPrjElem(pmdidSource, pmdidDest, pcr, pcrNew);
+			(*ppdrgpexprChildProjElems)->Append(pexprChildProjElem);
+		}
+		else
+		{
+			(*ppdrgpcrChild)->Append(const_cast<CColRef*>(pcr));
+		}
+	}
+}
 
 //---------------------------------------------------------------------------
 //	@function:
@@ -919,6 +1061,68 @@ CTranslatorDXLToExpr::PdrgpexprPreprocessSetOpInputs
 	}
 
 	// create the set operation's array of output column identifiers
+	for (ULONG ulOutputColPos = 0; ulOutputColPos < ulOutputCols; ulOutputColPos++)
+	{
+		const CDXLColDescr *pdxlcdOutput = pdxlop->Pdxlcd(ulOutputColPos);
+		pdrgpulOutput->Append(GPOS_NEW(m_pmp) ULONG (pdxlcdOutput->UlID()));
+	}
+	
+	return pdrgpexpr;
+}
+
+// Pre-process inputs to the value scan and add casting when needed
+DrgPexpr *
+CTranslatorDXLToExpr::PdrgpexprPreprocessValueScanInputs
+	(
+	const CDXLNode *pdxln,
+	DrgDrgPcr *pdrgdrgpcrInput,
+	DrgPul *pdrgpulOutput
+	)
+{
+	GPOS_ASSERT(NULL != pdxln);
+	GPOS_ASSERT(NULL != pdrgdrgpcrInput);
+	GPOS_ASSERT(NULL != pdrgpulOutput);
+	
+	// array of child expression
+	DrgPexpr *pdrgpexpr = GPOS_NEW(m_pmp) DrgPexpr(m_pmp);
+	
+	CDXLLogicalValueScan *pdxlop = CDXLLogicalValueScan::PdxlopConvert(pdxln->Pdxlop());
+	
+	const ULONG ulArity = pdxln->UlArity();
+	GPOS_ASSERT(ulArity == pdxlop->UlChildren());
+	
+	const ULONG ulOutputCols = pdxlop->UlArity();
+	
+	for (ULONG ul = 0; ul < ulArity; ul++)
+	{
+		CExpression *pexprChild = NULL;
+		DrgPcr *pdrgpcrInput = NULL;
+		DrgPexpr *pdrgpexprChildProjElems = NULL;
+		BuildValueScanChild(pdxln, ul, &pexprChild, &pdrgpcrInput, &pdrgpexprChildProjElems);
+		GPOS_ASSERT(ulOutputCols == pdrgpcrInput->UlLength());
+		GPOS_ASSERT(NULL != pexprChild);
+		
+		pdrgdrgpcrInput->Append(pdrgpcrInput);
+		
+		if (0 < pdrgpexprChildProjElems->UlLength())
+		{
+			CExpression *pexprChildProject = GPOS_NEW(m_pmp) CExpression
+			(
+			 m_pmp,
+			 GPOS_NEW(m_pmp) CLogicalProject(m_pmp),
+			 pexprChild,
+			 GPOS_NEW(m_pmp) CExpression(m_pmp, GPOS_NEW(m_pmp) CScalarProjectList(m_pmp), pdrgpexprChildProjElems)
+			 );
+			pdrgpexpr->Append(pexprChildProject);
+		}
+		else
+		{
+			pdrgpexpr->Append(pexprChild);
+			pdrgpexprChildProjElems->Release();
+		}
+	}
+	
+	// create the value scan's array of output column identifiers
 	for (ULONG ulOutputColPos = 0; ulOutputColPos < ulOutputCols; ulOutputColPos++)
 	{
 		const CDXLColDescr *pdxlcdOutput = pdxlop->Pdxlcd(ulOutputColPos);
