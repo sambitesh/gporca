@@ -558,6 +558,8 @@ add_library(naucrates
             src/parser/CParseHandlerLogicalSelect.cpp
             include/naucrates/dxl/parser/CParseHandlerLogicalSetOp.h
             src/parser/CParseHandlerLogicalSetOp.cpp
+            include/naucrates/dxl/parser/CParseHandlerLogicalValuesGet.h
+            src/parser/CParseHandlerLogicalValuesGet.cpp
             include/naucrates/dxl/parser/CParseHandlerLogicalTVF.h
             src/parser/CParseHandlerLogicalTVF.cpp
             include/naucrates/dxl/parser/CParseHandlerLogicalUpdate.h

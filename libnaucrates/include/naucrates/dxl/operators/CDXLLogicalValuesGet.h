@@ -6,7 +6,7 @@
 //		CDXLLogicalValuesGet.h
 //
 //	@doc:
-//		Class for representing DXL logical Value scan
+//		Class for representing DXL logical Value get
 //		
 //	@owner: 
 //		
@@ -27,7 +27,7 @@
 namespace gpdxl
 {
 
-	// Class for representing DXL logical Value Scan
+	// Class for representing DXL logical Values get
 	class CDXLLogicalValuesGet : public CDXLLogical
 	{
 		private:

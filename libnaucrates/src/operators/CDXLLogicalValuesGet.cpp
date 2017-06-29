@@ -101,7 +101,7 @@ CDXLLogicalValuesGet::SerializeToDXL
 	pxmlser->CloseElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenColumns));
 
 	// serialize Values List
-	pxmlser->OpenElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenLogicalValuesList));
+	pxmlser->OpenElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenValuesList));
 	GPOS_ASSERT(NULL != m_pdrgpdrgpdxldatumValuesList);
 
 	const ULONG ulTuples = m_pdrgpdrgpdxldatumValuesList->UlLength();
@@ -121,7 +121,7 @@ CDXLLogicalValuesGet::SerializeToDXL
 		pxmlser->CloseElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenConstTuple));
 	}
 
-	pxmlser->CloseElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenLogicalValuesList));
+	pxmlser->CloseElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenValuesList));
 
 	pxmlser->CloseElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), pstrElemName);
 }
