@@ -9,4 +9,4 @@ inputs:
   - name: orca_github_release_stage
 outputs:
 run:
-  path: orca_src/concourse/check_existing_tag.bash
+  path: orca_src/concourse/check_existing_tag.py
