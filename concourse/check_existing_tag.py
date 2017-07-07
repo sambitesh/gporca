@@ -20,5 +20,5 @@ if __name__ == "__main__":
 
   if (version.parse(existing_tag) >= version.parse(tag_to_be_published)):
     print ("Tag {0} already present on ORCA repository".format(tag_to_be_published))
-        print ("Please BUMP the ORCA version")
+    print ("Please BUMP the ORCA version")
     sys.exit(1)
