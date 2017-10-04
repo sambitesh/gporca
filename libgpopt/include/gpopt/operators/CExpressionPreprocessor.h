@@ -165,6 +165,9 @@ namespace gpopt
 			static
 			CExpression *PexprInferPredicates(IMemoryPool *pmp, CExpression *pexpr);
 
+			static
+			CExpression *PexprInWithDistinct( IMemoryPool *pmp, CExpression* pexprExistWithPredFromINSubq);
+
 			// entry for pruning unused computed columns
 			static CExpression *
 			PexprPruneUnusedComputedCols

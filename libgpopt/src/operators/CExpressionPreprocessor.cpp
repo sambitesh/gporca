@@ -2108,6 +2108,57 @@ CExpressionPreprocessor::PexprExistWithPredFromINSubq
 	return pexprNew;
 }
 
+CExpression *
+CExpressionPreprocessor::PexprInWithDistinct
+	(
+		IMemoryPool *pmp,
+		CExpression* pexpr
+	)
+{
+	GPOS_ASSERT(NULL != pmp);
+	GPOS_ASSERT(NULL != pexpr);
+
+	COperator *pop = pexpr->Pop();
+	if (pexpr->Pop()->Eopid() == COperator::EopScalarSubqueryAny)
+	{
+		CExpression *pexprGbAgg = (*pexpr)[0];
+		if (pexprGbAgg->Pop()->Eopid() == COperator::EopLogicalGbAgg)
+		{
+			CExpression *pexprGbAggProjectList = (*pexprGbAgg)[1];
+			GPOS_ASSERT(pexprGbAggProjectList->Pop()->Eopid() == COperator::EopScalarProjectList);
+			if (pexprGbAggProjectList->UlArity() == 0)
+			{
+				// Drop the group by
+				DrgPexpr *pdrgpexprInWithoutDistinct = GPOS_NEW(pmp) DrgPexpr(pmp);
+
+				CExpression *pexprGbAggChild = (*pexprGbAgg)[0];
+				CExpression *pexprScalarAnyIdent = (*pexpr)[1];
+
+				pexprGbAggChild->AddRef();
+				pexprScalarAnyIdent->AddRef();
+				pdrgpexprInWithoutDistinct->Append(pexprGbAggChild);
+				pdrgpexprInWithoutDistinct->Append(pexprScalarAnyIdent);
+
+				pop->AddRef();
+				return GPOS_NEW(pmp) CExpression(pmp, pop, pdrgpexprInWithoutDistinct);
+			}
+		}
+	}
+
+	// process children
+	DrgPexpr *pdrgpexpr = GPOS_NEW(pmp) DrgPexpr(pmp);
+	const ULONG ulChildren = pexpr->UlArity();
+	for (ULONG ul = 0; ul < ulChildren; ++ul )
+	{
+		CExpression *pexprChild = PexprInWithDistinct(pmp, (*pexpr)[ul]);
+		pdrgpexpr->Append(pexprChild);
+	}
+
+	pop->AddRef();
+	return GPOS_NEW(pmp) CExpression(pmp, pop, pdrgpexpr);
+}
+
+
 // main driver, pre-processing of input logical expression
 CExpression *
 CExpressionPreprocessor::PexprPreprocess
@@ -2259,7 +2310,12 @@ CExpressionPreprocessor::PexprPreprocess
 	GPOS_CHECK_ABORT;
 	pexrReorderedScalarCmpChildren->Release();
 
-	return pexprExistWithPredFromINSubq;
+	// (26) drop redundant distinct inside IN (ANY) subquery
+	CExpression *pexprInWithoutDistinct = PexprInWithDistinct(pmp, pexprExistWithPredFromINSubq);
+	GPOS_CHECK_ABORT;
+	pexprExistWithPredFromINSubq->Release();
+
+	return pexprInWithoutDistinct;
 }
 
 // EOF
