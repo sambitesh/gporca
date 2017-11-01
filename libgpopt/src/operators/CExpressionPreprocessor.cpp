@@ -2108,8 +2108,11 @@ CExpressionPreprocessor::PexprExistWithPredFromINSubq
 	return pexprNew;
 }
 
+// In an IN, EXISTS, NOT IN or NOT EXISTS subquery, any duplicates in the
+// subquery will not affect the overall result, so we can throw away any
+// DISTINCT clause. Unless there's a LIMIT.
 CExpression *
-CExpressionPreprocessor::PexprInWithDistinct
+CExpressionPreprocessor::PexprRemoveDistinctFromSubquery
 	(
 		IMemoryPool *pmp,
 		CExpression* pexpr
@@ -2119,28 +2122,39 @@ CExpressionPreprocessor::PexprInWithDistinct
 	GPOS_ASSERT(NULL != pexpr);
 
 	COperator *pop = pexpr->Pop();
-	if (pexpr->Pop()->Eopid() == COperator::EopScalarSubqueryAny)
+
+	bool fAnyAllSubq = COperator::EopScalarSubqueryAny == pop->Eopid() ||
+			COperator::EopScalarSubqueryAll == pop->Eopid();
+	bool fExistsSubq = COperator::EopScalarSubqueryExists == pop->Eopid() ||
+			 COperator::EopScalarSubqueryNotExists == pop->Eopid();
+
+	if (fAnyAllSubq || fExistsSubq)
 	{
 		CExpression *pexprGbAgg = (*pexpr)[0];
-		if (pexprGbAgg->Pop()->Eopid() == COperator::EopLogicalGbAgg)
+		if (COperator::EopLogicalGbAgg == pexprGbAgg->Pop()->Eopid())
 		{
 			CExpression *pexprGbAggProjectList = (*pexprGbAgg)[1];
-			GPOS_ASSERT(pexprGbAggProjectList->Pop()->Eopid() == COperator::EopScalarProjectList);
-			if (pexprGbAggProjectList->UlArity() == 0)
+			GPOS_ASSERT(COperator::EopScalarProjectList == pexprGbAggProjectList->Pop()->Eopid());
+			if (0 == pexprGbAggProjectList->UlArity())
 			{
-				// Drop the group by
-				DrgPexpr *pdrgpexprInWithoutDistinct = GPOS_NEW(pmp) DrgPexpr(pmp);
-
-				CExpression *pexprGbAggChild = (*pexprGbAgg)[0];
-				CExpression *pexprScalarAnyIdent = (*pexpr)[1];
-
-				pexprGbAggChild->AddRef();
-				pexprScalarAnyIdent->AddRef();
-				pdrgpexprInWithoutDistinct->Append(pexprGbAggChild);
-				pdrgpexprInWithoutDistinct->Append(pexprScalarAnyIdent);
-
 				pop->AddRef();
-				return GPOS_NEW(pmp) CExpression(pmp, pop, pdrgpexprInWithoutDistinct);
+
+				CExpression *pexprGbChild = (*pexprGbAgg)[0];
+				pexprGbChild->AddRef();
+
+				if (fExistsSubq)
+				{
+					return GPOS_NEW(pmp) CExpression(pmp, pop, pexprGbChild);
+				}
+
+				CExpression *pexprScalarIdent = (*pexpr)[1];
+				pexprScalarIdent->AddRef();
+
+				DrgPexpr *pdrgpexprWithoutDistinct = GPOS_NEW(pmp) DrgPexpr(pmp);
+				pdrgpexprWithoutDistinct->Append(pexprGbChild);
+				pdrgpexprWithoutDistinct->Append(pexprScalarIdent);
+
+				return GPOS_NEW(pmp) CExpression(pmp, pop, pdrgpexprWithoutDistinct);
 			}
 		}
 	}
@@ -2148,9 +2162,9 @@ CExpressionPreprocessor::PexprInWithDistinct
 	// process children
 	DrgPexpr *pdrgpexpr = GPOS_NEW(pmp) DrgPexpr(pmp);
 	const ULONG ulChildren = pexpr->UlArity();
-	for (ULONG ul = 0; ul < ulChildren; ++ul )
+	for (ULONG ul = 0; ul < ulChildren; ul++)
 	{
-		CExpression *pexprChild = PexprInWithDistinct(pmp, (*pexpr)[ul]);
+		CExpression *pexprChild = PexprRemoveDistinctFromSubquery(pmp, (*pexpr)[ul]);
 		pdrgpexpr->Append(pexprChild);
 	}
 
@@ -2310,12 +2324,12 @@ CExpressionPreprocessor::PexprPreprocess
 	GPOS_CHECK_ABORT;
 	pexrReorderedScalarCmpChildren->Release();
 
-	// (26) drop redundant distinct inside IN (ANY) subquery
-	CExpression *pexprInWithoutDistinct = PexprInWithDistinct(pmp, pexprExistWithPredFromINSubq);
+	// (26) eliminate unnecessary DISTINCT inside IN/NOT IN/EXISTS/NOT EXISTS subquery
+	CExpression *pexprWithoutDistinct = PexprRemoveDistinctFromSubquery(pmp, pexprExistWithPredFromINSubq);
 	GPOS_CHECK_ABORT;
 	pexprExistWithPredFromINSubq->Release();
 
-	return pexprInWithoutDistinct;
+	return pexprWithoutDistinct;
 }
 
 // EOF

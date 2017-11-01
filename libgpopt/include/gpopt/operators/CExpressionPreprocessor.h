@@ -165,8 +165,9 @@ namespace gpopt
 			static
 			CExpression *PexprInferPredicates(IMemoryPool *pmp, CExpression *pexpr);
 
+			// eliminate unnecessary DISTINCT inside IN/NOT IN/EXISTS/NOT EXISTS subquery
 			static
-			CExpression *PexprInWithDistinct( IMemoryPool *pmp, CExpression* pexprExistWithPredFromINSubq);
+			CExpression *PexprRemoveDistinctFromSubquery(IMemoryPool *pmp, CExpression* pexprExistWithPredFromINSubq);
 
 			// entry for pruning unused computed columns
 			static CExpression *
