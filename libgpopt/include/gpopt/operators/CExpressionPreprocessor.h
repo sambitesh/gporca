@@ -167,7 +167,7 @@ namespace gpopt
 
 			// eliminate unnecessary DISTINCT inside IN/NOT IN/EXISTS/NOT EXISTS subquery
 			static
-			CExpression *PexprRemoveDistinctFromSubquery(IMemoryPool *pmp, CExpression* pexprExistWithPredFromINSubq);
+			CExpression *PexprRemoveDistinctFromSubquery(IMemoryPool *pmp, CExpression *pexpr);
 
 			// entry for pruning unused computed columns
 			static CExpression *
