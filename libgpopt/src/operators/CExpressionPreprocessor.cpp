@@ -2115,22 +2115,35 @@ CExpression *
 CExpressionPreprocessor::PexprRemoveDistinctFromSubquery
 	(
 		IMemoryPool *pmp,
-		CExpression* pexpr
+		CExpression *pexpr
 	)
 {
+	// protect against stack overflow during recursion
+	GPOS_CHECK_STACK_SIZE;
 	GPOS_ASSERT(NULL != pmp);
 	GPOS_ASSERT(NULL != pexpr);
 
 	COperator *pop = pexpr->Pop();
 
-	bool fAnyAllSubq = COperator::EopScalarSubqueryAny == pop->Eopid() ||
-			COperator::EopScalarSubqueryAll == pop->Eopid();
-	bool fExistsSubq = COperator::EopScalarSubqueryExists == pop->Eopid() ||
-			 COperator::EopScalarSubqueryNotExists == pop->Eopid();
+	// recursively process children
+	const ULONG ulArity = pexpr->UlArity();
+	pop->AddRef();
 
-	if (fAnyAllSubq || fExistsSubq)
+	DrgPexpr *pdrgpexprChildren = GPOS_NEW(pmp) DrgPexpr(pmp);
+	for (ULONG ul = 0; ul < ulArity; ul++)
 	{
-		CExpression *pexprGbAgg = (*pexpr)[0];
+		CExpression *pexprChild = PexprRemoveDistinctFromSubquery(pmp, (*pexpr)[ul]);
+		pdrgpexprChildren->Append(pexprChild);
+	}
+
+	CExpression *pexprNew = GPOS_NEW(pmp) CExpression(pmp, pop, pdrgpexprChildren);
+
+	bool fQuantified = CUtils::FQuantifiedSubquery(pop);
+	bool fExistential = CUtils::FExistentialSubquery(pop);
+
+	if (fQuantified || fExistential)
+	{
+		CExpression *pexprGbAgg = (*pexprNew)[0];
 		if (COperator::EopLogicalGbAgg == pexprGbAgg->Pop()->Eopid())
 		{
 			CExpression *pexprGbAggProjectList = (*pexprGbAgg)[1];
@@ -2142,34 +2155,26 @@ CExpressionPreprocessor::PexprRemoveDistinctFromSubquery
 				CExpression *pexprGbChild = (*pexprGbAgg)[0];
 				pexprGbChild->AddRef();
 
-				if (fExistsSubq)
+				if (fExistential)
 				{
+					pexprNew->Release();
 					return GPOS_NEW(pmp) CExpression(pmp, pop, pexprGbChild);
 				}
 
-				CExpression *pexprScalarIdent = (*pexpr)[1];
+				CExpression *pexprScalarIdent = (*pexprNew)[1];
 				pexprScalarIdent->AddRef();
 
-				DrgPexpr *pdrgpexprWithoutDistinct = GPOS_NEW(pmp) DrgPexpr(pmp);
-				pdrgpexprWithoutDistinct->Append(pexprGbChild);
-				pdrgpexprWithoutDistinct->Append(pexprScalarIdent);
+				DrgPexpr *pdrgpexpr = GPOS_NEW(pmp) DrgPexpr(pmp);
+				pdrgpexpr->Append(pexprGbChild);
+				pdrgpexpr->Append(pexprScalarIdent);
 
-				return GPOS_NEW(pmp) CExpression(pmp, pop, pdrgpexprWithoutDistinct);
+				pexprNew->Release();
+				return GPOS_NEW(pmp) CExpression(pmp, pop, pdrgpexpr);
 			}
 		}
 	}
 
-	// process children
-	DrgPexpr *pdrgpexpr = GPOS_NEW(pmp) DrgPexpr(pmp);
-	const ULONG ulChildren = pexpr->UlArity();
-	for (ULONG ul = 0; ul < ulChildren; ul++)
-	{
-		CExpression *pexprChild = PexprRemoveDistinctFromSubquery(pmp, (*pexpr)[ul]);
-		pdrgpexpr->Append(pexprChild);
-	}
-
-	pop->AddRef();
-	return GPOS_NEW(pmp) CExpression(pmp, pop, pdrgpexpr);
+	return pexprNew;
 }
 
 

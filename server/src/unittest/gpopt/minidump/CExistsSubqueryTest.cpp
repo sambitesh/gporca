@@ -38,6 +38,7 @@ const CHAR *rgszExistsFileNames[] =
 		"../data/dxl/minidump/NotIn-Distinct-Subquery.mdp",
 		"../data/dxl/minidump/Exists-Distinct-Subquery.mdp",
 		"../data/dxl/minidump/NotExists-Distinct-Subquery.mdp",
+		"../data/dxl/minidump/Nested-Exists-Distinct-Subquery.mdp",
 	};
 
 
