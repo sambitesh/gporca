@@ -523,6 +523,7 @@ CConstraint::PdrgpcrsMergeFromBoolOp
 	}
 
 	GPOS_ASSERT(CPredicateUtils::FNot(pexpr));
+
 	return GPOS_NEW(pmp) DrgPcrs(pmp);
 }
 

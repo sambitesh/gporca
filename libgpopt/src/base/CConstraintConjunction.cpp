@@ -166,7 +166,8 @@ CConstraintConjunction::Pcnstr
 	for (ULONG ul = 0; ul < ulLen; ul++)
 	{
 		// the part of the child that references this column
-		CConstraint *pcnstrCol = (*pdrgpcnstrCol)[ul]->Pcnstr(pmp, pcr);
+		CConstraint *pcnstrChild = (*pdrgpcnstrCol)[ul];
+		CConstraint *pcnstrCol = pcnstrChild->Pcnstr(pmp, pcr);
 		if (NULL == pcnstrCol || pcnstrCol->FUnbounded())
 		{
 			CRefCount::SafeRelease(pcnstrCol);

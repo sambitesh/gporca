@@ -94,6 +94,15 @@ CConstraintNegation::Pcnstr
 		return NULL;
 	}
 
+	// TODO: Should this be the responsibility of the caller to explicity say
+	// that done drill down if there are more than 1 element
+	// This doesn't look right here as it seems to be a generic call.
+	CConstraint *pcnstrChild = this->PcnstrChild();
+	if (pcnstrChild->PcrsUsed()->CElements() > 1)
+	{
+		m_pcnstr->AddRef();
+		return GPOS_NEW(pmp) CConstraintNegation(pmp, m_pcnstr);
+	}
 	return GPOS_NEW(pmp) CConstraintNegation(pmp, m_pcnstr->Pcnstr(pmp, pcr));
 }
 
