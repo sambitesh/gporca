@@ -16,6 +16,7 @@
 #include "naucrates/dxl/parser/CParseHandlerBase.h"
 
 #include "gpopt/cost/ICostModelParams.h"
+#include "gpopt/cost/ICostModel.h"
 
 namespace gpdxl
 {
@@ -36,6 +37,9 @@ namespace gpdxl
 
 			// cost params
 			ICostModelParams *m_pcp;
+
+			// array of cost params
+			DrgPcp *m_pdrgPcp;
 
 			// private ctor
 			CParseHandlerCostParams(const CParseHandlerCostParams&);
@@ -69,8 +73,14 @@ namespace gpdxl
 			virtual
 			~CParseHandlerCostParams();
 
+			// returns array of cost params
+			DrgPcp *PdrgPcp()
+			{
+				return m_pdrgPcp;
+			}
+
 			// returns the dxl representation of cost parameters
-			ICostModelParams *Pcp()
+			ICostModelParams* Pcp()
 			{
 				return m_pcp;
 			}

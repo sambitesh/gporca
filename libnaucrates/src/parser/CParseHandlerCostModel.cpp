@@ -13,6 +13,7 @@
 #include "gpos/common/CBitSet.h"
 
 #include "naucrates/dxl/parser/CParseHandlerCostModel.h"
+#include "naucrates/dxl/parser/CParseHandlerCostParams.h"
 #include "naucrates/dxl/parser/CParseHandlerManager.h"
 #include "naucrates/dxl/parser/CParseHandlerFactory.h"
 
@@ -74,13 +75,22 @@ CParseHandlerCostModel::~CParseHandlerCostModel()
 void
 CParseHandlerCostModel::StartElement
 	(
-	const XMLCh* const , //xmlszUri,
+	const XMLCh* const xmlszUri,
 	const XMLCh* const xmlszLocalname,
-	const XMLCh* const , //xmlszQname,
+	const XMLCh* const xmlszQname,
 	const Attributes& attrs
 	)
-{	
-	if (0 != XMLString::compareString(CDXLTokens::XmlstrToken(EdxltokenCostModelConfig), xmlszLocalname))
+{
+	if (0 == XMLString::compareString(CDXLTokens::XmlstrToken(EdxltokenCostParams), xmlszLocalname))
+	{
+		// install a parse handler for the cost params
+		CParseHandlerBase *pphCostParams = CParseHandlerFactory::Pph(m_pmp, CDXLTokens::XmlstrToken(EdxltokenCostParams), m_pphm, this);
+		m_pphm->ActivateParseHandler(pphCostParams);
+		pphCostParams->startElement(xmlszUri, xmlszLocalname, xmlszQname, attrs);
+		this->Append(pphCostParams);
+		return;
+	}
+	else if (0 != XMLString::compareString(CDXLTokens::XmlstrToken(EdxltokenCostModelConfig), xmlszLocalname))
 	{
 		CWStringDynamic *pstr = CDXLUtils::PstrFromXMLCh(m_pphm->Pmm(), xmlszLocalname);
 		GPOS_RAISE(gpdxl::ExmaDXL, gpdxl::ExmiDXLUnexpectedTag, pstr->Wsz());
@@ -88,8 +98,7 @@ CParseHandlerCostModel::StartElement
 	
 	ULONG ulSegments = CDXLOperatorFactory::UlValueFromAttrs(m_pphm->Pmm(), attrs, EdxltokenSegmentsForCosting, EdxltokenCostModelConfig);
 	ICostModel::ECostModelType ecmt = (ICostModel::ECostModelType) CDXLOperatorFactory::UlValueFromAttrs(m_pphm->Pmm(), attrs, EdxltokenCostModelType, EdxltokenCostModelConfig);
-	
-	
+
 	if (ICostModel::EcmtGPDBLegacy == ecmt)
 	{
 		m_pcm = GPOS_NEW(m_pmp) CCostModelGPDBLegacy(m_pmp, ulSegments); 
@@ -123,6 +132,17 @@ CParseHandlerCostModel::EndElement
 		GPOS_RAISE( gpdxl::ExmaDXL, gpdxl::ExmiDXLUnexpectedTag, pstr->Wsz());
 	}
 	
+	GPOS_ASSERT(this->UlLength() <= 1);
+
+	if(this->UlLength() !=0)
+	{
+		CParseHandlerCostParams *pphCostParams = dynamic_cast<CParseHandlerCostParams *>((*this)[0]);
+		if(pphCostParams->PdrgPcp())
+		{
+			m_pcm->SetParams(pphCostParams->PdrgPcp());
+		}
+	}
+
 	// deactivate handler
 	m_pphm->DeactivateHandler();
 }

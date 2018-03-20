@@ -37,7 +37,8 @@ CParseHandlerCostParams::CParseHandlerCostParams
 	)
 	:
 	CParseHandlerBase(pmp, pphm, pphRoot),
-	m_pcp(NULL)
+	m_pcp(NULL),
+	m_pdrgPcp(NULL)
 {}
 
 
@@ -52,6 +53,7 @@ CParseHandlerCostParams::CParseHandlerCostParams
 CParseHandlerCostParams::~CParseHandlerCostParams()
 {
 	CRefCount::SafeRelease(m_pcp);
+	CRefCount::SafeRelease(m_pdrgPcp);
 }
 
 
@@ -76,10 +78,12 @@ CParseHandlerCostParams::StartElement
 	{
 		// as of now, we only parse params of GPDB cost model
 		m_pcp = GPOS_NEW(m_pmp) CCostModelParamsGPDB(m_pmp);
+		m_pdrgPcp = GPOS_NEW(m_pmp) DrgPcp (m_pmp);
 	}
 	else if(0 == XMLString::compareString(CDXLTokens::XmlstrToken(EdxltokenCostParam), xmlstrLocalname))
 	{
 		GPOS_ASSERT(NULL != m_pcp);
+		GPOS_ASSERT(NULL != m_pdrgPcp);
 
 		// start new search stage
 		CParseHandlerBase *pphCostParam = CParseHandlerFactory::Pph(m_pmp, CDXLTokens::XmlstrToken(EdxltokenCostParam), m_pphm, this);
@@ -125,6 +129,9 @@ CParseHandlerCostParams::EndElement
 	{
 		CParseHandlerCostParam *pphCostParam = dynamic_cast<CParseHandlerCostParam*>((*this)[ul]);
 		m_pcp->SetParam(pphCostParam->SzName(), pphCostParam->DVal(), pphCostParam->DLowerBound(), pphCostParam->DUpperBound());
+		const char *Szname = (const char*) pphCostParam->SzName();
+		ICostModelParams::SCostParam *pcpUl = GPOS_NEW(m_pmp) ICostModelParams::SCostParam(m_pcp->PcpLookupUlId(Szname), pphCostParam->DVal(), pphCostParam->DLowerBound(), pphCostParam->DUpperBound());
+		m_pdrgPcp->Append(pcpUl);
 	}
 
 	// deactivate handler

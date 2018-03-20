@@ -130,6 +130,10 @@ namespace gpopt
 			virtual
 			SCostParam *PcpLookup(const CHAR *szName) const;
 
+			// returns param ulId by name
+			virtual
+			ULONG PcpLookupUlId(const CHAR *szName) const;
+
 			// set param by id
 			virtual
 			void SetParam(ULONG ulId, CDouble dVal, CDouble dLowerBound, CDouble dUpperBound);

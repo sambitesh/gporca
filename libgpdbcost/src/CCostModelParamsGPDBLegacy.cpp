@@ -175,6 +175,25 @@ CCostModelParamsGPDBLegacy::PcpLookup
 	return NULL;
 }
 
+ULONG
+CCostModelParamsGPDBLegacy::PcpLookupUlId
+(
+	const CHAR *szName
+ )
+const
+{
+	GPOS_ASSERT(NULL != szName);
+
+	for (ULONG ul = 0; ul < EcpSentinel; ul++)
+	{
+		if (0 == clib::IStrCmp(szName, rgszCostParamNames[ul]))
+		{
+			return ul;
+		}
+	}
+
+	return -1;
+}
 
 //---------------------------------------------------------------------------
 //	@function:
