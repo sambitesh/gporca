@@ -1205,6 +1205,8 @@ CDXLUtils::SerializeOptimizerConfig
 	const CStatisticsConfig *pstatsconf = poconf->Pstatsconf();
 	const CCTEConfig *pcteconf = poconf->Pcteconf();
 	const ICostModel *pcm = poconf->Pcm();
+	const ICostModelParams *pcmp = pcm->Pcp();
+	const ICostModelParams::SCostParam *pscp = pcmp->PcpLookup(40);
 	const CHint *phint = poconf->Phint();
 	const CWindowOids *pwindowoids = poconf->Pwindowoids();
 
@@ -1237,6 +1239,15 @@ CDXLUtils::SerializeOptimizerConfig
 	xmlser.OpenElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenCostModelConfig));
 	xmlser.AddAttribute(CDXLTokens::PstrToken(EdxltokenCostModelType), pcm->Ecmt());
 	xmlser.AddAttribute(CDXLTokens::PstrToken(EdxltokenSegmentsForCosting), pcm->UlHosts());
+	xmlser.OpenElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenCostParams));
+	
+	xmlser.OpenElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenCostParam));
+	xmlser.AddAttribute(CDXLTokens::PstrToken(EdxltokenName), "NLJFactor");
+	xmlser.AddAttribute(CDXLTokens::PstrToken(EdxltokenValue), pscp->DVal());
+	xmlser.AddAttribute(CDXLTokens::PstrToken(EdxltokenCostParamLowerBound), pscp->DLowerBound());
+	xmlser.AddAttribute(CDXLTokens::PstrToken(EdxltokenCostParamUpperBound), pscp->DUpperBound());
+	xmlser.CloseElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenCostParam));
+	xmlser.CloseElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenCostParams));
 	xmlser.CloseElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenCostModelConfig));
 
 	xmlser.OpenElement(CDXLTokens::PstrToken(EdxltokenNamespacePrefix), CDXLTokens::PstrToken(EdxltokenHint));
