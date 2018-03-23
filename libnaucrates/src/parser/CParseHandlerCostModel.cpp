@@ -86,19 +86,9 @@ CParseHandlerCostModel::StartElement
 		GPOS_RAISE(gpdxl::ExmaDXL, gpdxl::ExmiDXLUnexpectedTag, pstr->Wsz());
 	}
 	
-	ULONG ulSegments = CDXLOperatorFactory::UlValueFromAttrs(m_pphm->Pmm(), attrs, EdxltokenSegmentsForCosting, EdxltokenCostModelConfig);
-	ICostModel::ECostModelType ecmt = (ICostModel::ECostModelType) CDXLOperatorFactory::UlValueFromAttrs(m_pphm->Pmm(), attrs, EdxltokenCostModelType, EdxltokenCostModelConfig);
-	
-	
-	if (ICostModel::EcmtGPDBLegacy == ecmt)
-	{
-		m_pcm = GPOS_NEW(m_pmp) CCostModelGPDBLegacy(m_pmp, ulSegments); 
-	}
-	else
-	{
-		GPOS_ASSERT(ICostModel::EcmtGPDBCalibrated == ecmt);
-		m_pcm = GPOS_NEW(m_pmp) CCostModelGPDB(m_pmp, ulSegments);
-	}
+	m_ulSegments = CDXLOperatorFactory::UlValueFromAttrs(m_pphm->Pmm(), attrs, EdxltokenSegmentsForCosting, EdxltokenCostModelConfig);
+
+	m_ecmt = (ICostModel::ECostModelType) CDXLOperatorFactory::UlValueFromAttrs(m_pphm->Pmm(), attrs, EdxltokenCostModelType, EdxltokenCostModelConfig);
 } 
 
 //---------------------------------------------------------------------------
@@ -122,8 +112,21 @@ CParseHandlerCostModel::EndElement
 		CWStringDynamic *pstr = CDXLUtils::PstrFromXMLCh(m_pphm->Pmm(), xmlszLocalname);
 		GPOS_RAISE( gpdxl::ExmaDXL, gpdxl::ExmiDXLUnexpectedTag, pstr->Wsz());
 	}
-	
-	// deactivate handler
+
+	switch (m_ecmt)
+	{
+		case ICostModel::EcmtGPDBLegacy:
+			m_pcm = GPOS_NEW(m_pmp) CCostModelGPDBLegacy(m_pmp, m_ulSegments);
+			break;
+		case ICostModel::EcmtGPDBCalibrated:
+			m_pcm = GPOS_NEW(m_pmp) CCostModelGPDB(m_pmp, m_ulSegments);
+			break;
+		case ICostModel::EcmtSentinel:
+			GPOS_ASSERT(false && "Unexpected cost model type");
+			break;
+	}
+
+    // deactivate handler
 	m_pphm->DeactivateHandler();
 }
 

@@ -14,6 +14,7 @@
 
 #include "gpos/base.h"
 #include "naucrates/dxl/parser/CParseHandlerBase.h"
+#include "gpopt/cost/ICostModel.h"
 
 namespace gpdxl
 {
@@ -32,7 +33,8 @@ namespace gpdxl
 	class CParseHandlerCostModel : public CParseHandlerBase
 	{
 		private:
-
+			ICostModel::ECostModelType m_ecmt;
+			ULONG m_ulSegments;
 			// cost model
 			ICostModel *m_pcm;
 			
