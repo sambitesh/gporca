@@ -60,7 +60,7 @@ namespace gpdxl
 		EdxltokenHint,
 		EdxltokenMinNumOfPartsToRequireSortOnInsert,
 		EdxltokenJoinArityForAssociativityCommutativity,
-		EdxltokenArrayExpansionThreshold,
+		EdxltokenConstraintDerivationThreshold,
 		EdxltokenJoinOrderDPThreshold,
 		EdxltokenBroadcastThreshold,
 		EdxltokenEnforceConstraintsOnDML,

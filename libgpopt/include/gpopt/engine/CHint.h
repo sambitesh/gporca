@@ -39,7 +39,7 @@ namespace gpopt
 
 			ULONG m_ulJoinArityForAssociativityCommutativity;
 
-			ULONG m_ulArrayExpansionThreshold;
+			ULONG m_ulConstraintDerivationThreshold;
 
 			ULONG m_ulJoinOrderDPLimit;
 
@@ -57,7 +57,7 @@ namespace gpopt
 				(
 				ULONG ulMinNumOfPartsToRequireSortOnInsert,
 				ULONG ulJoinArityForAssociativityCommutativity,
-				ULONG ulArrayExpansionThreshold,
+				ULONG ulConstraintDerivationThreshold,
 				ULONG ulJoinOrderDPLimit,
 				ULONG ulBroadcastThreshold,
 				BOOL fEnforceConstraintsOnDML
@@ -65,7 +65,7 @@ namespace gpopt
 				:
 				m_ulMinNumOfPartsToRequireSortOnInsert(ulMinNumOfPartsToRequireSortOnInsert),
 				m_ulJoinArityForAssociativityCommutativity(ulJoinArityForAssociativityCommutativity),
-				m_ulArrayExpansionThreshold(ulArrayExpansionThreshold),
+				m_ulConstraintDerivationThreshold(ulConstraintDerivationThreshold),
 				m_ulJoinOrderDPLimit(ulJoinOrderDPLimit),
 				m_ulBroadcastThreshold(ulBroadcastThreshold),
 				m_fEnforceConstraintsOnDML(fEnforceConstraintsOnDML)
@@ -93,9 +93,9 @@ namespace gpopt
 			// will be expanded during constraint derivation. The benefits of using a smaller number
 			// are avoiding expensive expansion of constraints in terms of memory and optimization
 			// time
-			ULONG UlArrayExpansionThreshold() const
+			ULONG UlConstraintDerivationThreshold() const
 			{
-				return m_ulArrayExpansionThreshold;
+				return m_ulConstraintDerivationThreshold;
 			}
 
 			// Maximum number of relations in an n-ary join operator where ORCA will
@@ -128,7 +128,7 @@ namespace gpopt
 										(
 										INT_MAX, /* ulMinNumOfPartsToRequireSortOnInsert */
 										INT_MAX, /* ulJoinArityForAssociativityCommutativity */
-										INT_MAX, /* ulArrayExpansionThreshold */
+										INT_MAX, /* ulConstraintDerivationThreshold */
 										JOIN_ORDER_DP_THRESHOLD, /*ulJoinOrderDPLimit*/
 										BROADCAST_THRESHOLD, /*ulBroadcastThreshold*/
 										true /* fEnforceConstraintsOnDML */

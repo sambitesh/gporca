@@ -110,9 +110,9 @@ CConstraint::PcnstrFromScalarArrayCmp
 
 		// When array size exceeds the threshold, don't expand it into a DNF
 		COptimizerConfig *poconf = COptCtxt::PoctxtFromTLS()->Poconf();
-		ULONG ulArrayExpansionThreshold = poconf->Phint()->UlArrayExpansionThreshold();
+		ULONG ulConstraintDerivationThreshold = poconf->Phint()->UlConstraintDerivationThreshold();
 
-		if (ulArity > ulArrayExpansionThreshold)
+		if (ulArity > ulConstraintDerivationThreshold)
 		{
 			return NULL;
 		}
@@ -423,10 +423,21 @@ CConstraint::PcnstrFromScalarBoolOp
 	GPOS_ASSERT(NULL != ppdrgpcrs);
 	GPOS_ASSERT(NULL == *ppdrgpcrs);
 
+	const ULONG ulArity= pexpr->UlArity();
+
+	// Large IN/NOT IN lists that can not be converted into CScalarArrayCmp, are represented by a long boolean expression tree (DNF)
+	// Deriving constraints from such a tree is quite expensive; hence don't bother when the arity of OR exceeds the threshold
+	COptimizerConfig *poconf = COptCtxt::PoctxtFromTLS()->Poconf();
+	ULONG ulConstraintDerivationThreshold = poconf->Phint()->UlConstraintDerivationThreshold();
+
+	if (CPredicateUtils::FOr(pexpr) && ulArity > ulConstraintDerivationThreshold)
+	{
+		return NULL;
+	}
+
 	*ppdrgpcrs = GPOS_NEW(pmp) DrgPcrs(pmp);
 	DrgPcnstr *pdrgpcnstr = GPOS_NEW(pmp) DrgPcnstr(pmp);
 
-	const ULONG ulArity= pexpr->UlArity();
 	for (ULONG ul = 0; ul < ulArity; ul++)
 	{
 		DrgPcrs *pdrgpcrsChild = NULL;
