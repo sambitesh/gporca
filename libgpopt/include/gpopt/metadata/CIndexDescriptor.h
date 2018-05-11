@@ -45,13 +45,13 @@ namespace gpopt
 			CName m_name;
 
 			// array of index key columns
-			DrgPcoldesc *m_pdrgpcoldescKeyCols;
+			CColumnDescriptorArray *m_pdrgpcoldescKeyCols;
 
 			// array of index included columns
-			DrgPcoldesc *m_pdrgpcoldescIncludedCols;
+			CColumnDescriptorArray *m_pdrgpcoldescIncludedCols;
 
 			// clustered index
-			BOOL m_fClustered;
+			BOOL m_clustered;
 
 			// private copy ctor
 			CIndexDescriptor(const CIndexDescriptor &);
@@ -61,12 +61,12 @@ namespace gpopt
 			// ctor
 			CIndexDescriptor
 				(
-				IMemoryPool *pmp,
+				IMemoryPool *mp,
 				IMDId *pmdidIndex,
 				const CName &name,
-				DrgPcoldesc *pdrgcoldescKeyCols,
-				DrgPcoldesc *pdrgcoldescIncludedCols,
-				BOOL fClustered
+				CColumnDescriptorArray *pdrgcoldescKeyCols,
+				CColumnDescriptorArray *pdrgcoldescIncludedCols,
+				BOOL is_clustered
 				);
 
 			// dtor
@@ -74,13 +74,13 @@ namespace gpopt
 			~CIndexDescriptor();
 
 			// number of key columns
-			ULONG UlKeys() const;
+			ULONG Keys() const;
 
 			// number of included columns
 			ULONG UlIncludedColumns() const;
 
 			// index mdid accessor
-			IMDId *Pmdid() const
+			IMDId *MDId() const
 			{
 				return m_pmdidIndex;
 			}
@@ -92,27 +92,27 @@ namespace gpopt
 			}
 
 			// key column descriptors
-			DrgPcoldesc *PdrgpcoldescKey() const
+			CColumnDescriptorArray *PdrgpcoldescKey() const
 			{
 				return m_pdrgpcoldescKeyCols;
 			}
 
 			// included column descriptors
-			DrgPcoldesc *PdrgpcoldescIncluded() const
+			CColumnDescriptorArray *PdrgpcoldescIncluded() const
 			{
 				return m_pdrgpcoldescIncludedCols;
 			}
 			
 			// is index clustered
-			BOOL FClustered() const
+			BOOL IsClustered() const
 			{
-				return m_fClustered;
+				return m_clustered;
 			}
 
 			// create an index descriptor
 			static CIndexDescriptor *Pindexdesc
 				(
-				IMemoryPool *pmp,
+				IMemoryPool *mp,
 				const CTableDescriptor *ptabdesc,
 				const IMDIndex *pmdindex
 				);
