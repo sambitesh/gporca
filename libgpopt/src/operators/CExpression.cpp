@@ -1167,10 +1167,10 @@ CExpression::PrintProperties
 		os << pfx << "DrvdRelProps:{" << *m_pdprel << "}" << std::endl;
 	}
 
-	if (NULL != m_pdpscalar)
-	{
-		os << pfx << "DrvdScalarProps:{" << *m_pdpscalar << "}" << std::endl;
-	}
+//	if (NULL != m_pdpscalar)
+//	{
+//		os << pfx << "DrvdScalarProps:{" << *m_pdpscalar << "}" << std::endl;
+//	}
 
 	if (NULL != m_pdpplan)
 	{
