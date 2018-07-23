@@ -152,10 +152,24 @@ CDXLOperatorFactory::MakeDXLNLJoin(CDXLMemoryManager *dxl_memory_manager, const 
 											  EdxltokenPhysicalNLJoin);
 	}
 
-	EdxlJoinType join_type =
-		ParseJoinType(join_type_xml, CDXLTokens::GetDXLTokenStr(EdxltokenPhysicalNLJoin));
 
-	return GPOS_NEW(mp) CDXLPhysicalNLJoin(mp, join_type, is_index_nlj);
+	// identify if nest params are expected in dxl
+	BOOL nest_params_exists = false;
+	const XMLCh *nest_param_exists_xml = attrs.getValue(CDXLTokens::XmlstrToken(EdxltokenNLJIndexOuterRefAsParam));
+	if (NULL != nest_param_exists_xml)
+	{
+		nest_params_exists = ConvertAttrValueToBool
+						(
+						dxl_memory_manager,
+						nest_param_exists_xml,
+						EdxltokenNLJIndexOuterRefAsParam,
+						EdxltokenPhysicalNLJoin
+						);
+	}
+
+	EdxlJoinType join_type = ParseJoinType(join_type_xml, CDXLTokens::GetDXLTokenStr(EdxltokenPhysicalNLJoin));
+	
+	return GPOS_NEW(mp) CDXLPhysicalNLJoin(mp, join_type, is_index_nlj, nest_params_exists);
 }
 
 //---------------------------------------------------------------------------

@@ -51,6 +51,7 @@ CParseHandlerFactory::Init(IMemoryPool *mp)
 		GPOS_NEW(mp) TokenParseHandlerFuncMap(mp, HASH_MAP_SIZE);
 
 	// array mapping XML Token -> Parse Handler Creator mappings to hashmap
+
 	SParseHandlerMapping token_parse_handler_map[] = {
 		{EdxltokenPlan, &CreatePlanParseHandler},
 		{EdxltokenMetadata, &CreateMetadataParseHandler},
@@ -270,8 +271,9 @@ CParseHandlerFactory::Init(IMemoryPool *mp)
 
 		{EdxltokenScalarExpr, &CreateScExprParseHandler},
 		{EdxltokenScalarValuesList, &CreateScValuesListParseHandler},
-		{EdxltokenPhysicalValuesScan, &CreateValuesScanParseHandler}
-
+		{EdxltokenPhysicalValuesScan, &CreateValuesScanParseHandler},
+		{EdxltokenNLJIndexParamList, &CreateNLJIndexParamListParseHandler},
+		{EdxltokenNLJIndexParam, &CreateNLJIndexParamParseHandler}
 	};
 
 	const ULONG num_of_parse_handlers = GPOS_ARRAY_SIZE(token_parse_handler_map);
@@ -2068,4 +2070,25 @@ CParseHandlerFactory::CreateMDArrayCoerceCastParseHandler(IMemoryPool *mp,
 		CParseHandlerMDArrayCoerceCast(mp, parse_handler_mgr, parse_handler_root);
 }
 
+CParseHandlerBase *
+CParseHandlerFactory::CreateNLJIndexParamListParseHandler
+	(
+	IMemoryPool *mp,
+	CParseHandlerManager *parse_handler_manager,
+	CParseHandlerBase *parse_handler_root
+	)
+{
+	return GPOS_NEW(mp) CParseHandlerNLJIndexParamList(mp, parse_handler_manager, parse_handler_root);
+}
+
+CParseHandlerBase *
+CParseHandlerFactory::CreateNLJIndexParamParseHandler
+	(
+	IMemoryPool *mp,
+	CParseHandlerManager *parse_handler_manager,
+	CParseHandlerBase *parse_handler_root
+	)
+{
+	return GPOS_NEW(mp) CParseHandlerNLJIndexParam(mp, parse_handler_manager, parse_handler_root);
+}
 // EOF

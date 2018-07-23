@@ -715,6 +715,9 @@ CDXLTokens::Init(IMemoryPool *mp)
 
 		{EdxltokenCtasOptionType, GPOS_WSZ_LIT("CtasOptionType")},
 		{EdxltokenVarTypeModList, GPOS_WSZ_LIT("VarTypeModList")},
+		{EdxltokenNLJIndexParamList, GPOS_WSZ_LIT("NLJIndexParamList")},
+		{EdxltokenNLJIndexParam, GPOS_WSZ_LIT("NLJIndexParam")},
+		{EdxltokenNLJIndexOuterRefAsParam, GPOS_WSZ_LIT("OuterRefAsParam")},
 	};
 
 	m_pstrmap = GPOS_NEW_ARRAY(m_mp, SStrMapElem, EdxltokenSentinel);

@@ -1097,6 +1097,24 @@ namespace gpdxl
 			CParseHandlerManager *parse_handler_mgr,
 			CParseHandlerBase *parse_handler_root);
 
+		// construct a nested loop param list parse handler
+		static
+		CParseHandlerBase *CreateNLJIndexParamListParseHandler
+		(
+		 IMemoryPool *mp,
+		 CParseHandlerManager *parse_handler_manager,
+		 CParseHandlerBase *parse_handler_root
+		 );
+
+		// construct a nested loop param parse handler
+		static
+		CParseHandlerBase *CreateNLJIndexParamParseHandler
+		(
+		 IMemoryPool *pmp,
+		 CParseHandlerManager *parse_handler_manager,
+		 CParseHandlerBase *parse_handler_root
+		 );
+
 	public:
 		// initialize mappings of tokens to parse handlers
 		static void Init(IMemoryPool *mp);
@@ -1110,6 +1128,7 @@ namespace gpdxl
 		// factory methods for creating parse handlers
 		static CParseHandlerDXL *GetParseHandlerDXL(IMemoryPool *mp,
 													CParseHandlerManager *);
+
 	};
 }  // namespace gpdxl
 
