@@ -73,7 +73,9 @@ CJoinOrder::SComponent::SComponent
 	:
 	m_pbs(NULL),
 	m_pexpr(pexpr),
-	m_fUsed(false)
+	m_fUsed(false),
+	outerchild_index(0),
+	innerchild_index(0)
 {	
 	m_pbs = GPOS_NEW(mp) CBitSet(mp);
 }
@@ -95,7 +97,9 @@ CJoinOrder::SComponent::SComponent
 	:
 	m_pbs(pbs),
 	m_pexpr(pexpr),
-	m_fUsed(false)
+	m_fUsed(false),
+	outerchild_index(0),
+	innerchild_index(0)
 {
 	GPOS_ASSERT(NULL != pbs);
 }
@@ -138,10 +142,35 @@ const
 		<< (*pbs) << std::endl;
 	os
 		<< *m_pexpr << std::endl;
-		
+	os
+		<< "Outerchild index: ";
+	os
+		<<  outerchild_index << std::endl;
+	os
+		<< "Innerchild index: ";
+	os
+		<<  innerchild_index << std::endl;
+
 	return os;
 }
 
+void
+CJoinOrder::SComponent::SetOuterChildIndex
+	(
+	INT index
+	)
+{
+	outerchild_index = index;
+}
+
+void
+CJoinOrder::SComponent::SetInnerChildIndex
+	(
+	INT index
+	)
+{
+	innerchild_index = index;
+}
 
 //---------------------------------------------------------------------------
 //	@function:
@@ -226,17 +255,60 @@ CJoinOrder::CJoinOrder
 	typedef SComponent* Pcomp;
 	typedef SEdge* Pedge;
 	
-	m_ulComps = pdrgpexpr->Size();
-	m_rgpcomp = GPOS_NEW_ARRAY(mp, Pcomp, m_ulComps);
-	
-	for (ULONG ul = 0; ul < m_ulComps; ul++)
+	ULONG nary_children = pdrgpexpr->Size();
+	INT outerJoins = 0;
+	for (ULONG ul = 0; ul < nary_children; ul++)
 	{
 		CExpression *pexprComp = (*pdrgpexpr)[ul];
-		pexprComp->AddRef();
-		m_rgpcomp[ul] = GPOS_NEW(mp) SComponent(mp, pexprComp);
+		if (COperator::EopLogicalLeftOuterJoin == pexprComp->Pop()->Eopid())
+		{
+			// TODO: handle nested case here
+			outerJoins++;
+		}
+	}
+
+	m_ulComps = nary_children + outerJoins;
+	m_rgpcomp = GPOS_NEW_ARRAY(mp, Pcomp, m_ulComps);
+
+	INT outerchild_index = 0;
+	INT innerchild_index = 0;
+	INT component = 0;
+
+	for (ULONG ul = 0; ul < nary_children; ul++, component++)
+	{
+		CExpression *pexprComp = (*pdrgpexpr)[ul];
+		if (COperator::EopLogicalLeftOuterJoin == pexprComp->Pop()->Eopid())
+		{
+			CExpression *outer_child = (*pexprComp)[0];
+			CExpression *inner_child = (*pexprComp)[1];
+
+			outer_child->AddRef();
+			SComponent *sc_outer = GPOS_NEW(mp) SComponent(mp, outer_child);
+			sc_outer->SetOuterChildIndex(++outerchild_index);
+			m_rgpcomp[component] = sc_outer;
+
+			// component always covers itself
+			(void) m_rgpcomp[component]->m_pbs->ExchangeSet(component);
+
+			component++;
+			inner_child->AddRef();
+			SComponent *sc_inner = GPOS_NEW(mp) SComponent(mp, inner_child);
+			sc_inner->SetInnerChildIndex(++innerchild_index);
+			m_rgpcomp[component] = sc_inner;
+
+			// add scalar
+			CExpression *scalar = (*pexprComp)[2];
+			scalar->AddRef();
+			pdrgpexprConj->Append(scalar);
+		}
+		else
+		{
+			pexprComp->AddRef();
+			m_rgpcomp[component] = GPOS_NEW(mp) SComponent(mp, pexprComp);
+		}
 		
 		// component always covers itself
-		(void) m_rgpcomp[ul]->m_pbs->ExchangeSet(ul);
+		(void) m_rgpcomp[component]->m_pbs->ExchangeSet(component);
 	}
 
 	m_ulEdges = pdrgpexprConj->Size();
@@ -352,21 +424,48 @@ CJoinOrder::PcompCombine
 	CExpression *pexprScalar = CPredicateUtils::PexprConjunction(m_mp, pdrgpexpr);
 
 	CExpression *pexpr = NULL;
+	INT component_outerchild_index = 0;
+	INT component_innerchild_index = 0;
+
 	if (NULL == pexprOuter)
 	{
 		// first call to this function, we create a Select node
+		component_outerchild_index = pcompInner->GetOuterChildIndex();
+		component_innerchild_index = pcompInner->GetInnerChildIndex();
 		pexpr = CUtils::PexprCollapseSelect(m_mp, pexprInner, pexprScalar);
 		pexprScalar->Release();
 	}
 	else
 	{
-		// not first call, we create an Inner Join
 		pexprInner->AddRef();
 		pexprOuter->AddRef();
-		pexpr = CUtils::PexprLogicalJoin<CLogicalInnerJoin>(m_mp, pexprOuter, pexprInner, pexprScalar);
+
+		if (IsSameOuterJoin(pcompOuter, pcompInner))
+		{
+			// TODO increment outer child index for new component here
+			// component_outerchild_index = pcompOuter->GetOuterChildIndex() + 1;
+			pexpr = CUtils::PexprLogicalJoin<CLogicalLeftOuterJoin>(m_mp, pexprOuter, pexprInner, pexprScalar);
+		}
+		else if (IsSameOuterJoin(pcompInner, pcompOuter))
+		{
+			pexpr = CUtils::PexprLogicalJoin<CLogicalLeftOuterJoin>(m_mp, pexprInner, pexprOuter, pexprScalar);
+		}
+		else
+		{
+			if (pcompOuter->GetOuterChildIndex() > 0)
+			{
+				component_outerchild_index = pcompOuter->GetOuterChildIndex();
+			}
+			// not first call, we create an Inner Join
+			pexpr = CUtils::PexprLogicalJoin<CLogicalInnerJoin>(m_mp, pexprOuter, pexprInner, pexprScalar);
+		}
 	}
 
-	return GPOS_NEW(m_mp) SComponent(pexpr, pbs);
+	SComponent *result = GPOS_NEW(m_mp) SComponent(pexpr, pbs);
+	result->SetOuterChildIndex(component_outerchild_index);
+	result->SetInnerChildIndex(component_innerchild_index);
+
+	return result;
 }
 
 
@@ -433,5 +532,47 @@ CJoinOrder::OsPrint
 	return os;
 }
 
+BOOL
+CJoinOrder::IsValidOuterJoinCombination
+	(
+		SComponent *component_1,
+		SComponent *component_2
+	)
+const
+{
+	// if both the participating component are inner children of an LOJ, this is an invalid combination
+	if (component_1->GetInnerChildIndex() > 0 && component_2->GetInnerChildIndex() > 0)
+	{
+		return false;
+	}
+
+	// check if both the components are a part of an LOJ (not necessary the same LOJ), else
+	// we do not want to continue with this combination
+	if ((component_1->GetOuterChildIndex() == 0 && component_2->GetInnerChildIndex() > 0) ||
+		(component_2->GetOuterChildIndex() == 0 && component_1->GetInnerChildIndex() > 0))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+BOOL
+CJoinOrder::IsSameOuterJoin
+	(
+		SComponent *outer_component,
+		SComponent *inner_component
+	)
+const
+{
+	// check if these components are inner and outer children of a same join
+	if ((outer_component->GetOuterChildIndex() > 0 && inner_component->GetInnerChildIndex() > 0) &&
+		outer_component->GetOuterChildIndex() == inner_component->GetInnerChildIndex())
+	{
+		return true;
+	}
+
+	return false;
+}
 
 // EOF
