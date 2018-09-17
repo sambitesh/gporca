@@ -461,6 +461,11 @@ CJoinOrder::PcompCombine
 			{
 				component_outerchild_index = pcompOuter->GetOuterChildIndex();
 			}
+			else if (pcompInner->GetOuterChildIndex() > 0)
+			{
+				component_outerchild_index = pcompInner->GetOuterChildIndex();
+			}
+
 			// not first call, we create an Inner Join
 			pexpr = CUtils::PexprLogicalJoin<CLogicalInnerJoin>(m_mp, pexprOuter, pexprInner, pexprScalar);
 		}

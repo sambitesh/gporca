@@ -143,11 +143,7 @@ CJoinOrderGreedy::GetStartingJoins()
 
 			CJoinOrder::SComponent *pcompTemp;
 
-			// arrange the components such that the outer child of LOJ be treated as outer
-		//	if (component_1->GetOuterChildIndex() > 0)
-				pcompTemp = PcompCombine(component_1,component_2);
-		//	else
-		//		pcompTemp = PcompCombine(component_2,component_1);
+			pcompTemp = PcompCombine(component_1,component_2);
 
 			// exclude cross joins to be considered as late as possible in the join order
 			if(CUtils::FCrossJoin(pcompTemp->m_pexpr))

@@ -145,6 +145,11 @@ CJoinOrderMinCard::PexprExpand()
 				continue;
 			}
 
+			if (!IsValidOuterJoinCombination(m_pcompResult, pcompCurrent))
+			{
+				continue;
+			}
+
 			// combine component with current result and derive stats
 			CJoinOrder::SComponent *pcompTemp;
 
