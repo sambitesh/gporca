@@ -68,6 +68,15 @@ namespace gpopt
 				BOOL Equals(const SComponentPair *pcomppairFst, const SComponentPair *pcomppairSnd);
 			};
 
+			struct SOuterJoinInfo : public CRefCount
+			{
+				INT m_outerchild_index;
+
+				INT m_innerchild_index;
+
+				SOuterJoinInfo(INT outerchild_index, INT innerchild_index);
+			};
+
 			// hashing function
 			static
 			ULONG UlHashBitSet
@@ -98,6 +107,9 @@ namespace gpopt
 			typedef CHashMap<CBitSet, CExpression, UlHashBitSet, FEqualBitSet,
 				CleanupRelease<CBitSet>, CleanupRelease<CExpression> > BitSetToExpressionMap;
 
+			typedef CHashMap<CBitSet, SOuterJoinInfo, UlHashBitSet, FEqualBitSet,
+				CleanupRelease<CBitSet>, CleanupRelease<SOuterJoinInfo> > BitSetToOuterJoinInfoMap;
+
 			// hash map from component pair to connecting edges
 			typedef CHashMap<SComponentPair, CExpression, SComponentPair::HashValue, SComponentPair::Equals,
 				CleanupRelease<SComponentPair>, CleanupRelease<CExpression> > ComponentPairToExpressionMap;
@@ -111,6 +123,8 @@ namespace gpopt
 
 			// dynamic programming table
 			BitSetToExpressionMap *m_phmbsexpr;
+
+			BitSetToOuterJoinInfoMap *m_bitset_to_outerjoin_map;
 
 			// map of expressions to its cost
 			ExpressionToCostMap *m_phmexprcost;
@@ -126,6 +140,8 @@ namespace gpopt
 
 			// lookup best join order for given set
 			CExpression *PexprLookup(CBitSet *pbs);
+
+			SOuterJoinInfo *OuterJoinInfoLookup(CBitSet *bs);
 
 			// extract predicate joining the two given sets
 			CExpression *PexprPred(CBitSet *pbsFst, CBitSet *pbsSnd);
@@ -171,6 +187,8 @@ namespace gpopt
 			// driver of subset generation
 			static
 			CBitSetArray *PdrgpbsSubsets(IMemoryPool *mp, CBitSet *pbs);
+
+			BOOL IsSameOuterJoin(SOuterJoinInfo *first, SOuterJoinInfo *second);
 
 		public:
 

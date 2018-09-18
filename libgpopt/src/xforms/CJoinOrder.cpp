@@ -258,16 +258,13 @@ CJoinOrder::CJoinOrder
 	ULONG nary_children = pdrgpexpr->Size();
 	INT outerJoins = 0;
 
-	if (GPOPT_FDISABLED_XFORM(CXform::ExfExpandNAryJoinDP))
+	for (ULONG ul = 0; ul < nary_children; ul++)
 	{
-		for (ULONG ul = 0; ul < nary_children; ul++)
+		CExpression *pexprComp = (*pdrgpexpr)[ul];
+		if (COperator::EopLogicalLeftOuterJoin == pexprComp->Pop()->Eopid())
 		{
-			CExpression *pexprComp = (*pdrgpexpr)[ul];
-			if (COperator::EopLogicalLeftOuterJoin == pexprComp->Pop()->Eopid())
-			{
-				// TODO: handle nested case here
-				outerJoins++;
-			}
+			// TODO: handle nested case here
+			outerJoins++;
 		}
 	}
 
@@ -281,8 +278,7 @@ CJoinOrder::CJoinOrder
 	for (ULONG ul = 0; ul < nary_children; ul++, component++)
 	{
 		CExpression *pexprComp = (*pdrgpexpr)[ul];
-		if (GPOPT_FDISABLED_XFORM(CXform::ExfExpandNAryJoinDP) &&
-			COperator::EopLogicalLeftOuterJoin == pexprComp->Pop()->Eopid())
+		if (COperator::EopLogicalLeftOuterJoin == pexprComp->Pop()->Eopid())
 		{
 			CExpression *outer_child = (*pexprComp)[0];
 			CExpression *inner_child = (*pexprComp)[1];

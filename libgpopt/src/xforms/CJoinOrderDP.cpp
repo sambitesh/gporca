@@ -115,6 +115,38 @@ CJoinOrderDP::SComponentPair::~SComponentPair()
 	m_pbsSnd->Release();
 }
 
+CJoinOrderDP::SOuterJoinInfo::SOuterJoinInfo
+								(
+								INT outerchild_index,
+								INT innerchild_index
+								)
+								:
+								m_outerchild_index(outerchild_index),
+								m_innerchild_index(innerchild_index)
+{
+}
+
+BOOL
+CJoinOrderDP::IsSameOuterJoin
+					(
+					SOuterJoinInfo *first,
+					SOuterJoinInfo *second
+					)
+{
+	SComponent *component_1 = GPOS_NEW(m_mp) SComponent(m_mp, NULL /* pexpr */);
+	component_1->SetOuterChildIndex(first->m_outerchild_index);
+	component_1->SetInnerChildIndex(first->m_innerchild_index);
+
+	SComponent *component_2 = GPOS_NEW(m_mp) SComponent(m_mp, NULL /* pexpr */);
+	component_2->SetOuterChildIndex(second->m_outerchild_index);
+	component_2->SetInnerChildIndex(second->m_innerchild_index);
+
+	BOOL result = CJoinOrder::IsSameOuterJoin(component_1, component_2);
+	component_1->Release();
+	component_2->Release();
+
+	return result;
+}
 
 //---------------------------------------------------------------------------
 //	@function:
@@ -135,6 +167,7 @@ CJoinOrderDP::CJoinOrderDP
 {
 	m_phmcomplink = GPOS_NEW(mp) ComponentPairToExpressionMap(mp);
 	m_phmbsexpr = GPOS_NEW(mp) BitSetToExpressionMap(mp);
+	m_bitset_to_outerjoin_map = GPOS_NEW(mp) BitSetToOuterJoinInfoMap(mp);
 	m_phmexprcost = GPOS_NEW(mp) ExpressionToCostMap(mp);
 	m_pdrgpexprTopKOrders = GPOS_NEW(mp) CExpressionArray(mp);
 	m_pexprDummy = GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) CPatternLeaf(mp));
@@ -165,6 +198,7 @@ CJoinOrderDP::~CJoinOrderDP()
 	// we still have all de-llocations enabled in debug-build to detect any possible leaks
 	m_phmcomplink->Release();
 	m_phmbsexpr->Release();
+	m_bitset_to_outerjoin_map->Release();
 	m_phmexprcost->Release();
 	m_pdrgpexprTopKOrders->Release();
 	m_pexprDummy->Release();
@@ -263,6 +297,26 @@ CJoinOrderDP::PexprLookup
 	return m_phmbsexpr->Find(pbs);
 }
 
+CJoinOrderDP::SOuterJoinInfo*
+CJoinOrderDP::OuterJoinInfoLookup
+	(
+	CBitSet *bs
+	)
+{
+	// if set has size 1, return expression directly
+	if (1 == bs->Size())
+	{
+		CBitSetIter bsi(*bs);
+		(void) bsi.Advance();
+
+		SComponent *component = m_rgpcomp[bsi.Bit()];
+
+		// TODO how do we free this?
+		return GPOS_NEW(m_mp) SOuterJoinInfo(component->GetOuterChildIndex(), component->GetInnerChildIndex());
+	}
+
+	return m_bitset_to_outerjoin_map->Find(bs);
+}
 
 //---------------------------------------------------------------------------
 //	@function:
@@ -371,6 +425,21 @@ CJoinOrderDP::PexprJoin
 	pexprSnd->AddRef();
 	pexprScalar->AddRef();
 
+	SOuterJoinInfo *first = OuterJoinInfoLookup(pbsFst);
+	GPOS_ASSERT(NULL != first);
+
+	SOuterJoinInfo *second = OuterJoinInfoLookup(pbsSnd);
+	GPOS_ASSERT(NULL != second);
+
+	if (IsSameOuterJoin(first, second))
+	{
+		return CUtils::PexprLogicalJoin<CLogicalLeftOuterJoin>(m_mp, pexprFst, pexprSnd, pexprScalar);
+	}
+	else if (IsSameOuterJoin(second, first))
+	{
+		return CUtils::PexprLogicalJoin<CLogicalLeftOuterJoin>(m_mp, pexprSnd, pexprFst, pexprScalar);
+	}
+
 	return CUtils::PexprLogicalJoin<CLogicalInnerJoin>(m_mp, pexprFst, pexprSnd, pexprScalar);
 }
 
@@ -476,11 +545,39 @@ CJoinOrderDP::PexprJoin
 
 	CExpression *pexprLeft = m_rgpcomp[ulCompFst]->m_pexpr;
 	CExpression *pexprRight = m_rgpcomp[ulCompSnd]->m_pexpr;
+
+	SComponent* component_1 = m_rgpcomp[ulCompFst];
+	SComponent* component_2 = m_rgpcomp[ulCompSnd];
 	pexprLeft->AddRef();
 	pexprRight->AddRef();
 	pexprScalar->AddRef();
-	CExpression *pexprJoin =
-		CUtils::PexprLogicalJoin<CLogicalInnerJoin>(m_mp, pexprLeft, pexprRight, pexprScalar);
+
+	INT component_outerchild_index = 0;
+	INT component_innerchild_index = 0;
+
+	CExpression *pexprJoin = NULL;
+	if (CJoinOrder::IsSameOuterJoin(component_1, component_2))
+	{
+		// TODO increment outer child index for new component here
+		// component_outerchild_index = pcompOuter->GetOuterChildIndex() + 1;
+		pexprJoin = CUtils::PexprLogicalJoin<CLogicalLeftOuterJoin>(m_mp, pexprLeft, pexprRight, pexprScalar);
+	}
+	else if (CJoinOrder::IsSameOuterJoin(component_2, component_1))
+	{
+		pexprJoin = CUtils::PexprLogicalJoin<CLogicalLeftOuterJoin>(m_mp, pexprRight, pexprLeft, pexprScalar);
+	}
+	else
+	{
+		if (component_1->GetOuterChildIndex() > 0)
+		{
+			component_outerchild_index = component_1->GetOuterChildIndex();
+		}
+		else if (component_2->GetOuterChildIndex() > 0)
+		{
+			component_outerchild_index = component_2->GetOuterChildIndex();
+		}
+		pexprJoin = CUtils::PexprLogicalJoin<CLogicalInnerJoin>(m_mp, pexprLeft, pexprRight, pexprScalar);
+	}
 
 	DeriveStats(pexprJoin);
 	// store solution in DP table
@@ -489,6 +586,11 @@ CJoinOrderDP::PexprJoin
 	BOOL fInserted =
 #endif // GPOS_DEBUG
 		m_phmbsexpr->Insert(pbs, pexprJoin);
+
+	SOuterJoinInfo *outer_join_info = GPOS_NEW(m_mp) SOuterJoinInfo(component_outerchild_index, component_innerchild_index);
+	pbs->AddRef();
+	m_bitset_to_outerjoin_map->Insert(pbs, outer_join_info);
+
 	GPOS_ASSERT(fInserted);
 
 	return pexprJoin;
@@ -521,6 +623,8 @@ CJoinOrderDP::PexprBestJoinOrderDP
 	CDouble dMinCost(0.0);
 	CExpression *pexprResult = NULL;
 
+	INT outer_child_index = 0;
+
 	CBitSetArray *pdrgpbsSubsets = PdrgpbsSubsets(m_mp, pbs);
 	const ULONG ulSubsets = pdrgpbsSubsets->Size();
 	for (ULONG ul = 0; ul < ulSubsets; ul++)
@@ -551,6 +655,13 @@ CJoinOrderDP::PexprBestJoinOrderDP
 					CRefCount::SafeRelease(pexprResult);
 					pexprJoin->AddRef();
 					pexprResult = pexprJoin;
+
+					if (pexprResult->Pop()->Eopid() == COperator::EopLogicalInnerJoin)
+					{
+						SOuterJoinInfo *first = OuterJoinInfoLookup(pbsCurrent);
+						SOuterJoinInfo *second = OuterJoinInfoLookup(pbsRemaining);
+						outer_child_index = first->m_outerchild_index > 0 ? first->m_outerchild_index : second->m_outerchild_index;
+					}
 				}
 
 				if (m_ulComps == pbs->Size())
@@ -578,6 +689,14 @@ CJoinOrderDP::PexprBestJoinOrderDP
 	BOOL fInserted =
 #endif // GPOS_DEBUG
 		m_phmbsexpr->Insert(pbs, pexprResult);
+	GPOS_ASSERT(fInserted);
+
+	SOuterJoinInfo *outer_join_info = GPOS_NEW(m_mp) SOuterJoinInfo(outer_child_index, 0 /* inner_child_index */);
+	pbs->AddRef();
+#ifdef GPOS_DEBUG
+	fInserted =
+#endif // GPOS_DEBUG
+	m_bitset_to_outerjoin_map->Insert(pbs, outer_join_info);
 	GPOS_ASSERT(fInserted);
 
 	// add expression cost to cost map
@@ -775,13 +894,44 @@ CJoinOrderDP::PexprCross
 	CBitSetIter bsi(*pbs);
 	(void) bsi.Advance();
 	CExpression *pexprComp = m_rgpcomp[bsi.Bit()]->m_pexpr;
+	SComponent* component_1 = m_rgpcomp[bsi.Bit()];
+
 	pexprComp->AddRef();
 	CExpression *pexprCross = pexprComp;
+	CExpression *scalar = CPredicateUtils::PexprConjunction(m_mp, NULL /*pdrgpexpr*/);
+
+	INT component_outerchild_index = 0;
+	INT component_innerchild_index = 0;
+
 	while (bsi.Advance())
 	{
 		pexprComp =  m_rgpcomp[bsi.Bit()]->m_pexpr;
+		SComponent* component_2 = m_rgpcomp[bsi.Bit()];
 		pexprComp->AddRef();
-		pexprCross = CUtils::PexprLogicalJoin<CLogicalInnerJoin>(m_mp, pexprComp, pexprCross, CPredicateUtils::PexprConjunction(m_mp, NULL /*pdrgpexpr*/));
+
+		if (CJoinOrder::IsSameOuterJoin(component_1, component_2))
+		{
+			// TODO increment outer child index for new component here
+			// component_outerchild_index = pcompOuter->GetOuterChildIndex() + 1;
+			pexprCross = CUtils::PexprLogicalJoin<CLogicalLeftOuterJoin>(m_mp, pexprComp, pexprCross, scalar);
+		}
+		else if (CJoinOrder::IsSameOuterJoin(component_2, component_1))
+		{
+			pexprCross = CUtils::PexprLogicalJoin<CLogicalLeftOuterJoin>(m_mp, pexprCross, pexprComp, scalar);
+		}
+		else
+		{
+			if (component_1->GetOuterChildIndex() > 0)
+			{
+				component_outerchild_index = component_1->GetOuterChildIndex();
+			}
+			else if (component_2->GetOuterChildIndex() > 0)
+			{
+				component_outerchild_index = component_2->GetOuterChildIndex();
+			}
+			pexprCross = CUtils::PexprLogicalJoin<CLogicalInnerJoin>(m_mp, pexprComp, pexprCross, scalar);
+		}
+
 	}
 
 	pbs->AddRef();
@@ -789,6 +939,15 @@ CJoinOrderDP::PexprCross
 		BOOL fInserted =
 #endif // GPOS_DEBUG
 			m_phmbsexpr->Insert(pbs, pexprCross);
+		GPOS_ASSERT(fInserted);
+
+	pbs->AddRef();
+
+	SOuterJoinInfo *outer_join_info = GPOS_NEW(m_mp) SOuterJoinInfo(component_outerchild_index, component_innerchild_index);
+#ifdef GPOS_DEBUG
+		fInserted =
+#endif // GPOS_DEBUG
+			m_bitset_to_outerjoin_map->Insert(pbs, outer_join_info);
 		GPOS_ASSERT(fInserted);
 
 	return pexprCross;
