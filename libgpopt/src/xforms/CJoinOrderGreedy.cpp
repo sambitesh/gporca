@@ -12,7 +12,6 @@
 
 #include "gpos/base.h"
 
-#include "gpos/common/CAutoRef.h"
 #include "gpos/io/COstreamString.h"
 #include "gpos/string/CWStringDynamic.h"
 
@@ -45,7 +44,7 @@ CJoinOrderGreedy::CJoinOrderGreedy
 	CExpressionArray *pdrgpexprConjuncts
 	)
 	:
-	CJoinOrder(pmp, pdrgpexprComponents, pdrgpexprConjuncts, true),
+	CJoinOrder(pmp, pdrgpexprComponents, pdrgpexprConjuncts, true /* m_include_loj_rels */),
 	m_pcompResult(NULL)
 {
 #ifdef GPOS_DEBUG
@@ -72,94 +71,6 @@ CJoinOrderGreedy::~CJoinOrderGreedy()
 }
 
 
-//---------------------------------------------------------------------------
-//	@function:
-//		CJoinOrder::MarkUsedEdges
-//
-//	@doc:
-//		Mark edges used by result component
-//
-//---------------------------------------------------------------------------
-void
-CJoinOrderGreedy::MarkUsedEdges()
-{
-	GPOS_ASSERT(NULL != m_pcompResult);
-
-	CExpression *pexpr = m_pcompResult->m_pexpr;
-	COperator::EOperatorId eopid = pexpr->Pop()->Eopid();
-	if (0 == pexpr->Arity() ||
-		(COperator::EopLogicalSelect != eopid &&
-		 COperator::EopLogicalInnerJoin != eopid &&
-		 COperator::EopLogicalLeftOuterJoin != eopid))
-	{
-		// result component does not have a scalar child, e.g. a Get node
-		return;
-	}
-
-	CExpression *pexprScalar = (*pexpr) [pexpr->Arity() - 1];
-	CExpressionArray *pdrgpexprScalar = CPredicateUtils::PdrgpexprConjuncts(m_mp, pexprScalar);
-	const ULONG ulSizeScalar = pdrgpexprScalar->Size();
-
-	// Find the correct edge to mark as used.  All the conjucts of the edge expr
-	// must match some conjuct of the scalar expr of m_compResults for that edge
-	// to be marked as used. This way edges that contain multiple conjucts are
-	// also matched correctly. e.g. sometimes we have an hyper-edge like below
-	//
-	// +--CScalarBoolOp (EboolopAnd)
-	//	|--CScalarCmp (=)
-	//	|  |--CScalarIdent "l_orderkey" (87)
-	//	|  +--CScalarIdent "l_orderkey" (41)
-	//	+--CScalarCmp (<>)
-	//	|--CScalarIdent "l_suppkey" (89)
-	//	+--CScalarIdent "l_suppkey" (43)
-
-	for (ULONG ulEdge = 0; ulEdge < m_ulEdges; ulEdge++)
-	{
-		SEdge *pedge = m_rgpedge[ulEdge];
-		if (pedge->m_fUsed)
-		{
-			continue;
-		}
-
-		CExpressionArray *pdrgpexprEdge = CPredicateUtils::PdrgpexprConjuncts(m_mp, pedge->m_pexpr);
-		const ULONG ulSizeEdge = pdrgpexprEdge->Size();
-
-#ifdef GPOS_DEBUG
-		CAutoRef<CBitSet> pbsScalarConjuctsMatched(GPOS_NEW(m_mp) CBitSet(m_mp));
-#endif
-		ULONG ulMatchCount = 0; // Count of edge predicate conjucts matched
-		// For each conjuct of the edge predicate
-		for (ULONG ulEdgePred = 0; ulEdgePred < ulSizeEdge; ++ulEdgePred)
-		{
-			// For each conjuct of the scalar predicate
-			for (ULONG ulScalarPred = 0; ulScalarPred < ulSizeScalar; ulScalarPred++)
-			{
-				if ((*pdrgpexprScalar)[ulScalarPred] == (*pdrgpexprEdge)[ulEdgePred])
-				{
-					// Count the number of edge predicate conjucts matched
-					ulMatchCount++;
-#ifdef GPOS_DEBUG
-					// Make sure each match is unique ie. each scalar conjuct matches
-					// only one edge conjunct
-					GPOS_ASSERT(!pbsScalarConjuctsMatched->Get(ulScalarPred));
-					pbsScalarConjuctsMatched->ExchangeSet(ulScalarPred);
-#endif
-					break;
-				}
-			}
-		}
-
-		if (ulMatchCount == ulSizeEdge)
-		{
-			// All the predicates of the edge was matched -> Mark it as used.
-			pedge->m_fUsed = true;
-		}
-		pdrgpexprEdge->Release();
-	}
-	pdrgpexprScalar->Release();
-}
-
-
 // function to get the minimal cardinality join pair as the starting pair
 CJoinOrder::SComponent *
 CJoinOrderGreedy::GetStartingJoins()
@@ -182,9 +93,7 @@ CJoinOrderGreedy::GetStartingJoins()
 				continue;
 			}
 
-			CJoinOrder::SComponent *pcompTemp;
-
-			pcompTemp = PcompCombine(component_1,component_2);
+			CJoinOrder::SComponent *pcompTemp = PcompCombine(component_1,component_2);
 
 			// exclude cross joins to be considered as late as possible in the join order
 			if(CUtils::FCrossJoin(pcompTemp->m_pexpr))
@@ -241,7 +150,7 @@ CJoinOrderGreedy::PexprExpand()
 	if(NULL != m_pcompResult)
 	{
 		// found atleast one non cross join
-		MarkUsedEdges();
+		MarkUsedEdges(m_pcompResult->m_pexpr);
 	}
 	else
 	{
@@ -357,7 +266,7 @@ CJoinOrderGreedy::PickBestJoin
 	pcompBestComponent->m_fUsed = true;
 	m_pcompResult->Release();
 	m_pcompResult = pcompBest;
-	MarkUsedEdges();
+	MarkUsedEdges(m_pcompResult->m_pexpr);
 
 	return best_comp_idx;
 }

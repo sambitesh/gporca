@@ -23,6 +23,8 @@
 #include "gpopt/operators/CPredicateUtils.h"
 #include "gpopt/xforms/CJoinOrder.h"
 
+#include "gpos/common/CAutoRef.h"
+
 
 using namespace gpopt;
 
@@ -251,7 +253,7 @@ CJoinOrder::CJoinOrder
 	IMemoryPool *mp,
 	CExpressionArray *pdrgpexpr,
 	CExpressionArray *pdrgpexprConj,
-	BOOL include_outer_join_rels
+	BOOL include_loj_rels
 	)
 	:
 	m_mp(mp),
@@ -259,7 +261,7 @@ CJoinOrder::CJoinOrder
 	m_ulEdges(0),
 	m_rgpcomp(NULL),
 	m_ulComps(0),
-	m_include_left_outer_join_rels(include_outer_join_rels)
+	m_include_loj_rels(include_loj_rels)
 {
 	typedef SComponent* Pcomp;
 	typedef SEdge* Pedge;
@@ -281,20 +283,19 @@ CJoinOrder::CJoinOrder
 	// In above case the pdrgpexpr comes with two elements in it:
 	//  - CLogicalGet "t1"
 	//  - CLogicalLeftOuterJoin
-	// We need to create compontnents out of "t1", "t4", "t5" and store them
+	// We need to create components out of "t1", "t4", "t5" and store them
 	// in m_rgcomp.
 	// total number of components = size of pdrgpexpr + no. of LOJs in it
 
 
-	if (m_include_left_outer_join_rels)
+	if (m_include_loj_rels)
 	{
 		for (ULONG ul = 0; ul < num_of_nary_children; ul++)
 		{
 			CExpression *pexprComp = (*pdrgpexpr)[ul];
 			if (COperator::EopLogicalLeftOuterJoin == pexprComp->Pop()->Eopid())
 			{
-				// TODO: we handle only one level of LOJ
-				// need to handle nested case too
+				// we handle only one level of LOJ
 				num_of_loj++;
 			}
 		}
@@ -309,7 +310,7 @@ CJoinOrder::CJoinOrder
 	for (ULONG ul = 0; ul < num_of_nary_children; ul++, component++)
 	{
 		CExpression *pexprComp = (*pdrgpexpr)[ul];
-		if (m_include_left_outer_join_rels &&
+		if (m_include_loj_rels &&
 			COperator::EopLogicalLeftOuterJoin == pexprComp->Pop()->Eopid())
 		{
 			// counter for number of loj available in tree
@@ -652,13 +653,96 @@ CJoinOrder::IsChildOfSameLOJ
 const
 {
 	// check if these components are inner and outer children of a same join
-	if ((outer_component->GetOuterChildIndex() > 0 && inner_component->GetInnerChildIndex() > 0) &&
-		outer_component->GetOuterChildIndex() == inner_component->GetInnerChildIndex())
-	{
-		return true;
-	}
-
-	return false;
+	return ((outer_component->GetOuterChildIndex() > 0 && inner_component->GetInnerChildIndex() > 0) &&
+			outer_component->GetOuterChildIndex() == inner_component->GetInnerChildIndex());
 }
 
+//---------------------------------------------------------------------------
+//	@function:
+//		CJoinOrder::MarkUsedEdges
+//
+//	@doc:
+//		Mark edges used by result component
+//
+//---------------------------------------------------------------------------
+void
+CJoinOrder::MarkUsedEdges
+	(
+	CExpression *pexpr
+	)
+{
+	GPOS_ASSERT(NULL != pexpr);
+
+	COperator::EOperatorId eopid = pexpr->Pop()->Eopid();
+	if (0 == pexpr->Arity() ||
+		(COperator::EopLogicalSelect != eopid &&
+		 COperator::EopLogicalInnerJoin != eopid &&
+		 COperator::EopLogicalLeftOuterJoin != eopid))
+	{
+		// result component does not have a scalar child, e.g. a Get node
+		return;
+	}
+
+	CExpression *pexprScalar = (*pexpr) [pexpr->Arity() - 1];
+	CExpressionArray *pdrgpexprScalar = CPredicateUtils::PdrgpexprConjuncts(m_mp, pexprScalar);
+	const ULONG ulSizeScalar = pdrgpexprScalar->Size();
+
+	// Find the correct edge to mark as used.  All the conjucts of the edge expr
+	// must match some conjuct of the scalar expr of m_compResults for that edge
+	// to be marked as used. This way edges that contain multiple conjucts are
+	// also matched correctly. e.g. sometimes we have an hyper-edge like below
+	//
+	// +--CScalarBoolOp (EboolopAnd)
+	//	|--CScalarCmp (=)
+	//	|  |--CScalarIdent "l_orderkey" (87)
+	//	|  +--CScalarIdent "l_orderkey" (41)
+	//	+--CScalarCmp (<>)
+	//	|--CScalarIdent "l_suppkey" (89)
+	//	+--CScalarIdent "l_suppkey" (43)
+
+	for (ULONG ulEdge = 0; ulEdge < m_ulEdges; ulEdge++)
+	{
+		SEdge *pedge = m_rgpedge[ulEdge];
+		if (pedge->m_fUsed)
+		{
+			continue;
+		}
+
+		CExpressionArray *pdrgpexprEdge = CPredicateUtils::PdrgpexprConjuncts(m_mp, pedge->m_pexpr);
+		const ULONG ulSizeEdge = pdrgpexprEdge->Size();
+
+#ifdef GPOS_DEBUG
+		CAutoRef<CBitSet> pbsScalarConjuctsMatched(GPOS_NEW(m_mp) CBitSet(m_mp));
+#endif
+		ULONG ulMatchCount = 0; // Count of edge predicate conjucts matched
+		// For each conjuct of the edge predicate
+		for (ULONG ulEdgePred = 0; ulEdgePred < ulSizeEdge; ++ulEdgePred)
+		{
+			// For each conjuct of the scalar predicate
+			for (ULONG ulScalarPred = 0; ulScalarPred < ulSizeScalar; ulScalarPred++)
+			{
+				if ((*pdrgpexprScalar)[ulScalarPred] == (*pdrgpexprEdge)[ulEdgePred])
+				{
+					// Count the number of edge predicate conjucts matched
+					ulMatchCount++;
+#ifdef GPOS_DEBUG
+					// Make sure each match is unique ie. each scalar conjuct matches
+					// only one edge conjunct
+					GPOS_ASSERT(!pbsScalarConjuctsMatched->Get(ulScalarPred));
+					pbsScalarConjuctsMatched->ExchangeSet(ulScalarPred);
+#endif
+					break;
+				}
+			}
+		}
+
+		if (ulMatchCount == ulSizeEdge)
+		{
+			// All the predicates of the edge was matched -> Mark it as used.
+			pedge->m_fUsed = true;
+		}
+		pdrgpexprEdge->Release();
+	}
+	pdrgpexprScalar->Release();
+}
 // EOF

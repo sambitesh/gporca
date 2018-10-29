@@ -131,7 +131,7 @@ CJoinOrderDP::CJoinOrderDP
 	CExpressionArray *pdrgpexprConjuncts
 	)
 	:
-	CJoinOrder(mp, pdrgpexprComponents, pdrgpexprConjuncts, false)
+	CJoinOrder(mp, pdrgpexprComponents, pdrgpexprConjuncts, false /* m_include_loj_rels */)
 {
 	m_phmcomplink = GPOS_NEW(mp) ComponentPairToExpressionMap(mp);
 	m_phmbsexpr = GPOS_NEW(mp) BitSetToExpressionMap(mp);

@@ -131,7 +131,7 @@ namespace gpopt
 			ULONG m_ulComps;
 
 			// should we optimize outer joins
-			BOOL m_include_left_outer_join_rels;
+			BOOL m_include_loj_rels;
 			
 			// compute cover of each edge
 			void ComputeEdgeCover();
@@ -142,6 +142,9 @@ namespace gpopt
 			// derive stats on a given component
 			virtual
 			void DeriveStats(CExpression *pexpr);
+
+			// mark edges used by expression
+			void MarkUsedEdges(CExpression *pexpr);
 
 		private:
 

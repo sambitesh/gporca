@@ -14,7 +14,6 @@
 #include "gpos/io/COstreamString.h"
 #include "gpos/string/CWStringDynamic.h"
 
-#include "gpos/common/CAutoRef.h"
 #include "gpos/common/clibwrapper.h"
 #include "gpos/common/CBitSet.h"
 
@@ -44,7 +43,7 @@ CJoinOrderMinCard::CJoinOrderMinCard
 	CExpressionArray *pdrgpexprConjuncts
 	)
 	:
-	CJoinOrder(mp, pdrgpexprComponents, pdrgpexprConjuncts, true),
+	CJoinOrder(mp, pdrgpexprComponents, pdrgpexprConjuncts, true /* m_include_loj_rels */),
 	m_pcompResult(NULL)
 {
 #ifdef GPOS_DEBUG
@@ -68,85 +67,6 @@ CJoinOrderMinCard::CJoinOrderMinCard
 CJoinOrderMinCard::~CJoinOrderMinCard()
 {
 	CRefCount::SafeRelease(m_pcompResult);
-}
-
-
-//---------------------------------------------------------------------------
-//	@function:
-//		CJoinOrderMinCard::MarkUsedEdges
-//
-//	@doc:
-//		Mark edges used by result component
-//
-//---------------------------------------------------------------------------
-void
-CJoinOrderMinCard::MarkUsedEdges()
-{
-	GPOS_ASSERT(NULL != m_pcompResult);
-
-	CExpression *pexpr = m_pcompResult->m_pexpr;
-	COperator::EOperatorId op_id = pexpr->Pop()->Eopid();
-	if (0 == pexpr->Arity() ||
-		(COperator::EopLogicalSelect != op_id &&
-		 COperator::EopLogicalInnerJoin != op_id &&
-		 COperator::EopLogicalLeftOuterJoin != op_id))
-	{
-		// result component does not have a scalar child, e.g. a Get node
-		return;
-	}
-
-	CExpression *pexprScalar = (*pexpr) [pexpr->Arity() - 1];
-	CExpressionArray *pdrgpexprScalar = CPredicateUtils::PdrgpexprConjuncts(m_mp, pexprScalar);
-	const ULONG ulSizeScalar = pdrgpexprScalar->Size();
-
-	// Find the correct edge to mark as used.  All the conjucts of the edge expr
-	// must match some conjuct of the scalar expr of m_compResults for that edge
-	// to be marked as used. This way edges that contain multiple conjucts are
-	// also matched correctly.
-	for (ULONG ulEdge = 0; ulEdge < m_ulEdges; ulEdge++)
-	{
-		SEdge *pedge = m_rgpedge[ulEdge];
-		if (pedge->m_fUsed)
-		{
-			continue;
-		}
-
-		CExpressionArray *pdrgpexprEdge = CPredicateUtils::PdrgpexprConjuncts(m_mp, pedge->m_pexpr);
-		const ULONG ulSizeEdge = pdrgpexprEdge->Size();
-
-#ifdef GPOS_DEBUG
-		CAutoRef<CBitSet> pbsScalarConjuctsMatched(GPOS_NEW(m_mp) CBitSet(m_mp));
-#endif
-		ULONG ulMatchCount = 0; // Count of edge predicate conjucts matched
-		// For each conjuct of the edge predicate
-		for (ULONG ulEdgePred = 0; ulEdgePred < ulSizeEdge; ++ulEdgePred)
-		{
-			// For each conjuct of the scalar predicate
-			for (ULONG ulScalarPred = 0; ulScalarPred < ulSizeScalar; ulScalarPred++)
-			{
-				if ((*pdrgpexprScalar)[ulScalarPred] == (*pdrgpexprEdge)[ulEdgePred])
-				{
-					// Count the number of edge predicate conjucts matched
-					ulMatchCount++;
-#ifdef GPOS_DEBUG
-					// Make sure each match is unique ie. each scalar conjuct matches
-					// only one edge conjunct
-					GPOS_ASSERT(!pbsScalarConjuctsMatched->Get(ulScalarPred));
-					pbsScalarConjuctsMatched->ExchangeSet(ulScalarPred);
-#endif
-					break;
-				}
-			}
-		}
-
-		if (ulMatchCount == ulSizeEdge)
-		{
-			// All the predicates of the edge was matched -> Mark it as used.
-			pedge->m_fUsed = true;
-		}
-		pdrgpexprEdge->Release();
-	}
-	pdrgpexprScalar->Release();
 }
 
 //---------------------------------------------------------------------------
@@ -185,9 +105,7 @@ CJoinOrderMinCard::PexprExpand()
 			}
 
 			// combine component with current result and derive stats
-			CJoinOrder::SComponent *pcompTemp;
-
-			pcompTemp = PcompCombine(m_pcompResult, pcompCurrent);
+			CJoinOrder::SComponent *pcompTemp = PcompCombine(m_pcompResult, pcompCurrent);
 
 			DeriveStats(pcompTemp->m_pexpr);
 			CDouble rows = pcompTemp->m_pexpr->Pstats()->Rows();
@@ -210,7 +128,7 @@ CJoinOrderMinCard::PexprExpand()
 		m_pcompResult = pcompBestResult;
 
 		// mark used edges to avoid including them multiple times
-		MarkUsedEdges();
+		MarkUsedEdges(m_pcompResult->m_pexpr);
 		ulCoveredComps++;
 	}
 	GPOS_ASSERT(NULL != m_pcompResult->m_pexpr);
