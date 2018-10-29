@@ -179,7 +179,7 @@ CJoinOrderMinCard::PexprExpand()
 				continue;
 			}
 
-			if (!IsValidOuterJoinCombination(m_pcompResult, pcompCurrent))
+			if (!IsValidLOJCombination(m_pcompResult, pcompCurrent))
 			{
 				continue;
 			}

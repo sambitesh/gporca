@@ -177,7 +177,7 @@ CJoinOrderGreedy::GetStartingJoins()
 			SComponent *component_1 = m_rgpcomp[ul1];
 			SComponent *component_2 = m_rgpcomp[ul2];
 
-			if (!IsValidOuterJoinCombination(component_1, component_2))
+			if (!IsValidLOJCombination(component_1, component_2))
 			{
 				continue;
 			}
@@ -330,7 +330,7 @@ CJoinOrderGreedy::PickBestJoin
 		SComponent *pcompCurrent = m_rgpcomp[iter.Bit()];
 		SComponent *pcompTemp = PcompCombine(m_pcompResult, pcompCurrent);
 
-		if (!IsValidOuterJoinCombination(m_pcompResult, pcompCurrent))
+		if (!IsValidLOJCombination(m_pcompResult, pcompCurrent))
 		{
 			continue;
 		}

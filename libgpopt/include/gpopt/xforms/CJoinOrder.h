@@ -83,9 +83,12 @@ namespace gpopt
 				// a flag to component edge as used
 				BOOL m_fUsed;
 
-				INT outerchild_index;
+				// populated only for left outer join child components
+				// it is an incremental counter for the LOJ's available in tree,
+				// and for children of same LOJ, m_outerchild_index == m_innerchild_index
+				INT m_outerchild_index;
 
-				INT innerchild_index;
+				INT m_innerchild_index;
 
 				// ctor
 				SComponent(IMemoryPool *mp, CExpression *pexpr);
@@ -105,9 +108,9 @@ namespace gpopt
 				// set inner child index
 				void SetInnerChildIndex(INT index);
 
-				INT GetOuterChildIndex() { return outerchild_index; }
+				INT GetOuterChildIndex() { return m_outerchild_index; }
 
-				INT GetInnerChildIndex() { return innerchild_index; }
+				INT GetInnerChildIndex() { return m_innerchild_index; }
 			};
 
 		protected:
@@ -164,7 +167,7 @@ namespace gpopt
 			virtual
 			IOstream &OsPrint(IOstream &) const;
 
-			BOOL IsValidOuterJoinCombination(SComponent *component_1, SComponent *component_2) const;
+			BOOL IsValidLOJCombination(SComponent *component_1, SComponent *component_2) const;
 
 			BOOL IsChildOfSameLOJ(SComponent *outer_component, SComponent *inner_component) const;
 

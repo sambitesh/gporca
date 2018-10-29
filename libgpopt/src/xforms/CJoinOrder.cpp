@@ -75,8 +75,8 @@ CJoinOrder::SComponent::SComponent
 	m_edge_set(NULL),
 	m_pexpr(pexpr),
 	m_fUsed(false),
-	outerchild_index(0),
-	innerchild_index(0)
+	m_outerchild_index(0),
+	m_innerchild_index(0)
 {	
 	m_pbs = GPOS_NEW(mp) CBitSet(mp);
 	m_edge_set = GPOS_NEW(mp) CBitSet(mp);
@@ -102,8 +102,8 @@ CJoinOrder::SComponent::SComponent
 	m_edge_set(edge_set),
 	m_pexpr(pexpr),
 	m_fUsed(false),
-	outerchild_index(0),
-	innerchild_index(0)
+	m_outerchild_index(0),
+	m_innerchild_index(0)
 {
 	GPOS_ASSERT(NULL != pbs);
 }
@@ -150,11 +150,11 @@ const
 	os
 		<< "Outerchild index: ";
 	os
-		<<  outerchild_index << std::endl;
+		<<  m_outerchild_index << std::endl;
 	os
 		<< "Innerchild index: ";
 	os
-		<<  innerchild_index << std::endl;
+		<<  m_innerchild_index << std::endl;
 
 	return os;
 }
@@ -165,7 +165,8 @@ CJoinOrder::SComponent::SetOuterChildIndex
 	INT index
 	)
 {
-	outerchild_index = index;
+	GPOS_ASSERT(0 == m_outerchild_index);
+	m_outerchild_index = index;
 }
 
 void
@@ -174,7 +175,8 @@ CJoinOrder::SComponent::SetInnerChildIndex
 	INT index
 	)
 {
-	innerchild_index = index;
+	GPOS_ASSERT(0 == m_innerchild_index);
+	m_innerchild_index = index;
 }
 
 //---------------------------------------------------------------------------
@@ -257,13 +259,13 @@ CJoinOrder::CJoinOrder
 	m_ulEdges(0),
 	m_rgpcomp(NULL),
 	m_ulComps(0),
-	m_include_left_outer_join_rels (include_outer_join_rels)
+	m_include_left_outer_join_rels(include_outer_join_rels)
 {
 	typedef SComponent* Pcomp;
 	typedef SEdge* Pedge;
 	
-	const ULONG nary_children = pdrgpexpr->Size();
-	INT num_of_outer_joins = 0;
+	const ULONG num_of_nary_children = pdrgpexpr->Size();
+	INT num_of_loj = 0;
 
 	// Since we are using a static array, we need to know size of the array before hand
 	// e.g.
@@ -286,41 +288,39 @@ CJoinOrder::CJoinOrder
 
 	if (m_include_left_outer_join_rels)
 	{
-		for (ULONG ul = 0; ul < nary_children; ul++)
+		for (ULONG ul = 0; ul < num_of_nary_children; ul++)
 		{
 			CExpression *pexprComp = (*pdrgpexpr)[ul];
 			if (COperator::EopLogicalLeftOuterJoin == pexprComp->Pop()->Eopid())
 			{
 				// TODO: we handle only one level of LOJ
 				// need to handle nested case too
-				num_of_outer_joins++;
+				num_of_loj++;
 			}
 		}
 	}
 
-	m_ulComps = nary_children + num_of_outer_joins;
+	m_ulComps = num_of_nary_children + num_of_loj;
 	m_rgpcomp = GPOS_NEW_ARRAY(mp, Pcomp, m_ulComps);
 
-	INT outerchild_index = 0;
-	INT innerchild_index = 0;
+	INT loj_index = 0;
 	INT component = 0;
 
-	for (ULONG ul = 0; ul < nary_children; ul++, component++)
+	for (ULONG ul = 0; ul < num_of_nary_children; ul++, component++)
 	{
 		CExpression *pexprComp = (*pdrgpexpr)[ul];
 		if (m_include_left_outer_join_rels &&
 			COperator::EopLogicalLeftOuterJoin == pexprComp->Pop()->Eopid())
 		{
+			// counter for number of loj available in tree
+			++loj_index;
+
 			CExpression *outer_child = (*pexprComp)[0];
 			CExpression *inner_child = (*pexprComp)[1];
 
 			outer_child->AddRef();
 			SComponent *sc_outer = GPOS_NEW(mp) SComponent(mp, outer_child);
-			// the outerchild and inner_child of an LOJ get an outerchild_index and innerchild_index for the respective outer
-			// and inner child.
-			// for same LOJ, the outerchild_index = innerchild_index
-			// different LOJs get different indexes
-			sc_outer->SetOuterChildIndex(++outerchild_index);
+			sc_outer->SetOuterChildIndex(loj_index);
 			m_rgpcomp[component] = sc_outer;
 
 			// component always covers itself
@@ -329,7 +329,7 @@ CJoinOrder::CJoinOrder
 			component++;
 			inner_child->AddRef();
 			SComponent *sc_inner = GPOS_NEW(mp) SComponent(mp, inner_child);
-			sc_inner->SetInnerChildIndex(++innerchild_index);
+			sc_inner->SetInnerChildIndex(loj_index);
 			m_rgpcomp[component] = sc_inner;
 
 			// add scalar
@@ -582,7 +582,7 @@ CJoinOrder::OsPrint
 }
 
 BOOL
-CJoinOrder::IsValidOuterJoinCombination
+CJoinOrder::IsValidLOJCombination
 	(
 		SComponent *component_1,
 		SComponent *component_2
