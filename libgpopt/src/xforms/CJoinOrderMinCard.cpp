@@ -128,7 +128,7 @@ CJoinOrderMinCard::PexprExpand()
 		m_pcompResult = pcompBestResult;
 
 		// mark used edges to avoid including them multiple times
-		MarkUsedEdges(m_pcompResult->m_pexpr);
+		MarkUsedEdges(m_pcompResult);
 		ulCoveredComps++;
 	}
 	GPOS_ASSERT(NULL != m_pcompResult->m_pexpr);

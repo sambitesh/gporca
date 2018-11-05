@@ -668,10 +668,12 @@ const
 void
 CJoinOrder::MarkUsedEdges
 	(
-	CExpression *pexpr
+	SComponent *pcomponent
 	)
 {
-	GPOS_ASSERT(NULL != pexpr);
+	GPOS_ASSERT(NULL != pcomponent);
+
+	CExpression *pexpr = pcomponent->m_pexpr;
 
 	COperator::EOperatorId eopid = pexpr->Pop()->Eopid();
 	if (0 == pexpr->Arity() ||
@@ -687,6 +689,8 @@ CJoinOrder::MarkUsedEdges
 	CExpressionArray *pdrgpexprScalar = CPredicateUtils::PdrgpexprConjuncts(m_mp, pexprScalar);
 	const ULONG ulSizeScalar = pdrgpexprScalar->Size();
 
+	CBitSetIter edges_iter(*(pcomponent->m_edge_set));
+
 	// Find the correct edge to mark as used.  All the conjucts of the edge expr
 	// must match some conjuct of the scalar expr of m_compResults for that edge
 	// to be marked as used. This way edges that contain multiple conjucts are
@@ -700,9 +704,9 @@ CJoinOrder::MarkUsedEdges
 	//	|--CScalarIdent "l_suppkey" (89)
 	//	+--CScalarIdent "l_suppkey" (43)
 
-	for (ULONG ulEdge = 0; ulEdge < m_ulEdges; ulEdge++)
+	while (edges_iter.Advance())
 	{
-		SEdge *pedge = m_rgpedge[ulEdge];
+		SEdge *pedge = m_rgpedge[edges_iter.Bit()];
 		if (pedge->m_fUsed)
 		{
 			continue;

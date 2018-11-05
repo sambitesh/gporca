@@ -150,7 +150,7 @@ CJoinOrderGreedy::PexprExpand()
 	if(NULL != m_pcompResult)
 	{
 		// found atleast one non cross join
-		MarkUsedEdges(m_pcompResult->m_pexpr);
+		MarkUsedEdges(m_pcompResult);
 	}
 	else
 	{
@@ -266,7 +266,7 @@ CJoinOrderGreedy::PickBestJoin
 	pcompBestComponent->m_fUsed = true;
 	m_pcompResult->Release();
 	m_pcompResult = pcompBest;
-	MarkUsedEdges(m_pcompResult->m_pexpr);
+	MarkUsedEdges(m_pcompResult);
 
 	return best_comp_idx;
 }

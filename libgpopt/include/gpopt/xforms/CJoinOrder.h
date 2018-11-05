@@ -144,7 +144,7 @@ namespace gpopt
 			void DeriveStats(CExpression *pexpr);
 
 			// mark edges used by expression
-			void MarkUsedEdges(CExpression *pexpr);
+			void MarkUsedEdges(SComponent *pcomponent);
 
 		private:
 
