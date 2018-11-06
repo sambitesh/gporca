@@ -685,24 +685,7 @@ CJoinOrder::MarkUsedEdges
 		return;
 	}
 
-	CExpression *pexprScalar = (*pexpr) [pexpr->Arity() - 1];
-	CExpressionArray *pdrgpexprScalar = CPredicateUtils::PdrgpexprConjuncts(m_mp, pexprScalar);
-	const ULONG ulSizeScalar = pdrgpexprScalar->Size();
-
 	CBitSetIter edges_iter(*(pcomponent->m_edge_set));
-
-	// Find the correct edge to mark as used.  All the conjucts of the edge expr
-	// must match some conjuct of the scalar expr of m_compResults for that edge
-	// to be marked as used. This way edges that contain multiple conjucts are
-	// also matched correctly. e.g. sometimes we have an hyper-edge like below
-	//
-	// +--CScalarBoolOp (EboolopAnd)
-	//	|--CScalarCmp (=)
-	//	|  |--CScalarIdent "l_orderkey" (87)
-	//	|  +--CScalarIdent "l_orderkey" (41)
-	//	+--CScalarCmp (<>)
-	//	|--CScalarIdent "l_suppkey" (89)
-	//	+--CScalarIdent "l_suppkey" (43)
 
 	while (edges_iter.Advance())
 	{
@@ -712,41 +695,10 @@ CJoinOrder::MarkUsedEdges
 			continue;
 		}
 
-		CExpressionArray *pdrgpexprEdge = CPredicateUtils::PdrgpexprConjuncts(m_mp, pedge->m_pexpr);
-		const ULONG ulSizeEdge = pdrgpexprEdge->Size();
-
-#ifdef GPOS_DEBUG
-		CAutoRef<CBitSet> pbsScalarConjuctsMatched(GPOS_NEW(m_mp) CBitSet(m_mp));
-#endif
-		ULONG ulMatchCount = 0; // Count of edge predicate conjucts matched
-		// For each conjuct of the edge predicate
-		for (ULONG ulEdgePred = 0; ulEdgePred < ulSizeEdge; ++ulEdgePred)
+		if (pcomponent->m_pbs->ContainsAll(pedge->m_pbs))
 		{
-			// For each conjuct of the scalar predicate
-			for (ULONG ulScalarPred = 0; ulScalarPred < ulSizeScalar; ulScalarPred++)
-			{
-				if ((*pdrgpexprScalar)[ulScalarPred] == (*pdrgpexprEdge)[ulEdgePred])
-				{
-					// Count the number of edge predicate conjucts matched
-					ulMatchCount++;
-#ifdef GPOS_DEBUG
-					// Make sure each match is unique ie. each scalar conjuct matches
-					// only one edge conjunct
-					GPOS_ASSERT(!pbsScalarConjuctsMatched->Get(ulScalarPred));
-					pbsScalarConjuctsMatched->ExchangeSet(ulScalarPred);
-#endif
-					break;
-				}
-			}
-		}
-
-		if (ulMatchCount == ulSizeEdge)
-		{
-			// All the predicates of the edge was matched -> Mark it as used.
 			pedge->m_fUsed = true;
 		}
-		pdrgpexprEdge->Release();
 	}
-	pdrgpexprScalar->Release();
 }
 // EOF
