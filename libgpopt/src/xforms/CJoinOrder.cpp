@@ -484,6 +484,7 @@ CJoinOrder::PcompCombine
 	}
 	else
 	{
+		GPOS_ASSERT(NULL != pexprInner);
 		pexprInner->AddRef();
 		pexprOuter->AddRef();
 

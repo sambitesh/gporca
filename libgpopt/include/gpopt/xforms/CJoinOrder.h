@@ -84,10 +84,13 @@ namespace gpopt
 				BOOL m_fUsed;
 
 				// populated only for left outer join child components
-				// it is an incremental counter for the LOJ's available in tree,
-				// and for children of same LOJ, m_outerchild_index == m_innerchild_index
+				// it is an index into the list of LOJ's available in join tree.
+				// and for children components (s1, s2) of the same LOJ,
+				// s1.m_outerchild_index == s2.m_innerchild_index.
+				// parent LOJ whose outer child is this component
 				INT m_outerchild_index;
 
+				// parent LOJ whose inner child is this component
 				INT m_innerchild_index;
 
 				// ctor

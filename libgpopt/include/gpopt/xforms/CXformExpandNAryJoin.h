@@ -71,7 +71,7 @@ namespace gpopt
 					CExpression *pexpr
 					) const;
 
-				}; // class CXformExpandNAryJoin
+	}; // class CXformExpandNAryJoin
 
 }
 
