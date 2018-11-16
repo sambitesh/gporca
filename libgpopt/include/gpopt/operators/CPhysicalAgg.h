@@ -42,6 +42,10 @@ namespace gpopt
 			// aggregate type (local / intermediate / global)
 			COperator::EGbAggType m_egbaggtype;
 
+			BOOL m_isAggFromSplitDQA;
+
+			BOOL m_isTwoStageScalarDQA;
+
 			// compute required distribution of the n-th child of an intermediate aggregate
 			CDistributionSpec *PdsRequiredIntermediateAgg(IMemoryPool *mp, ULONG  ulOptReq) const;
 
@@ -113,8 +117,14 @@ namespace gpopt
 				COperator::EGbAggType egbaggtype,
 				BOOL fGeneratesDuplicates,
 				CColRefArray *pdrgpcrArgDQA,
-				BOOL fMultiStage
+				BOOL fMultiStage,
+				BOOL isAggFromSplitDQA,
+				BOOL isTwoStageScalarDQA
 				);
+
+			BOOL IsAggFromSplitDQA();
+
+			BOOL IsTwoStageScalarDQA();
 
 			// dtor
 			virtual

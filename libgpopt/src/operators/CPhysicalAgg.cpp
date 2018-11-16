@@ -40,12 +40,16 @@ CPhysicalAgg::CPhysicalAgg
 	COperator::EGbAggType egbaggtype,
 	BOOL fGeneratesDuplicates,
 	CColRefArray *pdrgpcrArgDQA,
-	BOOL fMultiStage
+	BOOL fMultiStage,
+	BOOL isAggFromSplitDQA,
+	BOOL isTwoStageScalarDQA
 	)
 	:
 	CPhysical(mp),
 	m_pdrgpcr(colref_array),
 	m_egbaggtype(egbaggtype),
+	m_isAggFromSplitDQA(isAggFromSplitDQA),
+	m_isTwoStageScalarDQA(isTwoStageScalarDQA),
 	m_pdrgpcrMinimal(NULL),
 	m_fGeneratesDuplicates(fGeneratesDuplicates),
 	m_pdrgpcrArgDQA(pdrgpcrArgDQA),
@@ -632,6 +636,7 @@ CPhysicalAgg::EpetDistribution
 
 	if (ped->FCompatible(pds))
 	{
+		
 		if (COperator::EgbaggtypeLocal != Egbaggtype())
 		{
 			return CEnfdProp::EpetUnnecessary;
@@ -675,7 +680,17 @@ CPhysicalAgg::EpetRewindability
 	return CEnfdProp::EpetRequired;
 }
 
+BOOL
+CPhysicalAgg::IsTwoStageScalarDQA()
+{
+	return m_isTwoStageScalarDQA ;
+}
 
+BOOL
+CPhysicalAgg::IsAggFromSplitDQA()
+{
+	return m_isAggFromSplitDQA ;
+}
 //---------------------------------------------------------------------------
 //	@function:
 //		CPhysicalAgg::OsPrint
@@ -721,6 +736,12 @@ CPhysicalAgg::OsPrint
 		os	<< "]";
 	}
 	os	<< ", Generates Duplicates :[ " << FGeneratesDuplicates() << " ] ";
+
+	if (m_isAggFromSplitDQA)
+	{
+		os	<< ", m_isTwoStageScalarDQA :[ " << m_isTwoStageScalarDQA << " ] ";
+		os	<< ", m_isAggFromSplitDQA :[ " << m_isAggFromSplitDQA << " ] ";
+	}
 
 	return os;
 }

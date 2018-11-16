@@ -44,6 +44,9 @@ namespace gpopt
 
 			// local / intermediate / global aggregate
 			COperator::EGbAggType m_egbaggtype;
+		
+			// is this agg part of a 2-stage Scalar DQA?
+			BOOL m_isTwoStageScalarDQA;
 
 		protected:
 
@@ -76,7 +79,8 @@ namespace gpopt
 				(
 				IMemoryPool *mp,
 				CColRefArray *colref_array,
-				COperator::EGbAggType egbaggtype
+				COperator::EGbAggType egbaggtype,
+				BOOL isTwoStageScalarDQA
 				);
 
 			// ctor
@@ -86,8 +90,27 @@ namespace gpopt
 				CColRefArray *colref_array,
 				COperator::EGbAggType egbaggtype,
 				BOOL fGeneratesDuplicates,
-				CColRefArray *pdrgpcrArgDQA
+				CColRefArray *pdrgpcrArgDQA,
+				BOOL isTwoStageScalarDQA
 				);
+
+			// ctor
+			CLogicalGbAgg
+			(
+			 IMemoryPool *mp,
+			 CColRefArray *colref_array,
+			 COperator::EGbAggType egbaggtype
+			);
+			
+			// ctor
+			CLogicalGbAgg
+			(
+			 IMemoryPool *mp,
+			 CColRefArray *colref_array,
+			 COperator::EGbAggType egbaggtype,
+			 BOOL fGeneratesDuplicates,
+			 CColRefArray *pdrgpcrArgDQA
+			 );
 
 			// ctor
 			CLogicalGbAgg
@@ -108,6 +131,8 @@ namespace gpopt
 				BOOL fGeneratesDuplicates,
 				CColRefArray *pdrgpcrArgDQA
 				);
+
+			BOOL IsTwoStageScalarDQA();
 
 			// dtor
 			virtual

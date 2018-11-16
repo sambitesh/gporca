@@ -36,10 +36,23 @@ CPhysicalHashAggDeduplicate::CPhysicalHashAggDeduplicate
 	COperator::EGbAggType egbaggtype,
 	CColRefArray *pdrgpcrKeys,
 	BOOL fGeneratesDuplicates,
-	BOOL fMultiStage
+	BOOL fMultiStage,
+	BOOL isAggFromSplitDQA,
+	BOOL isTwoStageScalarDQA
 	)
 	:
-	CPhysicalHashAgg(mp, colref_array, pdrgpcrMinimal, egbaggtype, fGeneratesDuplicates, NULL /*pdrgpcrGbMinusDistinct*/, fMultiStage),
+	CPhysicalHashAgg
+		(
+		 mp,
+		 colref_array,
+		 pdrgpcrMinimal,
+		 egbaggtype,
+		 fGeneratesDuplicates,
+		 NULL /*pdrgpcrGbMinusDistinct*/,
+		 fMultiStage,
+		 isAggFromSplitDQA ,
+		 isTwoStageScalarDQA
+		),
 	m_pdrgpcrKeys(pdrgpcrKeys)
 {
 	GPOS_ASSERT(NULL != pdrgpcrKeys);
