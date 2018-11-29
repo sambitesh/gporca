@@ -18,7 +18,6 @@
 #include "gpopt/base/CDistributionSpecAny.h"
 #include "gpopt/operators/CExpressionHandle.h"
 #include "gpopt/operators/CPhysicalAgg.h"
-#include "gpopt/operators/CLogicalGbAgg.h"
 #include "gpopt/base/CDistributionSpecStrictSingleton.h"
 
 using namespace gpopt;
@@ -42,14 +41,14 @@ CPhysicalAgg::CPhysicalAgg
 	CColRefArray *pdrgpcrArgDQA,
 	BOOL fMultiStage,
 	BOOL isAggFromSplitDQA,
-	BOOL isTwoStageScalarDQA
+	CLogicalGbAgg::AggStage aggStage
 	)
 	:
 	CPhysical(mp),
 	m_pdrgpcr(colref_array),
 	m_egbaggtype(egbaggtype),
 	m_isAggFromSplitDQA(isAggFromSplitDQA),
-	m_isTwoStageScalarDQA(isTwoStageScalarDQA),
+	m_aggStage(aggStage),
 	m_pdrgpcrMinimal(NULL),
 	m_fGeneratesDuplicates(fGeneratesDuplicates),
 	m_pdrgpcrArgDQA(pdrgpcrArgDQA),
@@ -683,7 +682,13 @@ CPhysicalAgg::EpetRewindability
 BOOL
 CPhysicalAgg::IsTwoStageScalarDQA()
 {
-	return m_isTwoStageScalarDQA ;
+	return (m_aggStage == CLogicalGbAgg::TwoStageScalarDQA);
+}
+
+BOOL
+CPhysicalAgg::IsThreeStageScalarDQA()
+{
+	return (m_aggStage == CLogicalGbAgg::ThreeStageScalarDQA);
 }
 
 BOOL
@@ -739,7 +744,7 @@ CPhysicalAgg::OsPrint
 
 	if (m_isAggFromSplitDQA)
 	{
-		os	<< ", m_isTwoStageScalarDQA :[ " << m_isTwoStageScalarDQA << " ] ";
+		os	<< ", m_aggStage :[ " << m_aggStage << " ] ";
 		os	<< ", m_isAggFromSplitDQA :[ " << m_isAggFromSplitDQA << " ] ";
 	}
 

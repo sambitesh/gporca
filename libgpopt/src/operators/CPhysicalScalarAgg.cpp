@@ -39,7 +39,7 @@ CPhysicalScalarAgg::CPhysicalScalarAgg
 	CColRefArray *pdrgpcrArgDQA,
 	BOOL fMultiStage,
 	BOOL isAggFromSplitDQA,
-	BOOL isTwoStageScalarDQA
+	CLogicalGbAgg::AggStage aggStage
 	)
 	:
 	CPhysicalAgg
@@ -52,7 +52,7 @@ CPhysicalScalarAgg::CPhysicalScalarAgg
 	 pdrgpcrArgDQA,
 	 fMultiStage,
 	 isAggFromSplitDQA,
-	 isTwoStageScalarDQA
+	 aggStage
 	)
 {}
 

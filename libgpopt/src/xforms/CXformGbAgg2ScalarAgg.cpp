@@ -125,7 +125,7 @@ CXformGbAgg2ScalarAgg::Transform
 				pdrgpcrArgDQA,
 				CXformUtils::FMultiStageAgg(pexpr),
 				CXformUtils::FSplitDQAXform(pexpr),
-				popAgg->IsTwoStageScalarDQA()
+				popAgg->GetAggStage()
 				),
 			pexprRel,
 			pexprScalar

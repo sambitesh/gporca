@@ -157,6 +157,9 @@ CXformSplitDQA::Transform
 		pexprRelational = pexprChildProject;
 	}
 
+	CColRefArray *pDrgPcr = CLogicalGbAgg::PopConvert(pexpr->Pop())->Pdrgpcr();
+	BOOL fScalarDQA = (pDrgPcr == NULL || pDrgPcr->Size() == 0);
+
 	// multi-stage for both scalar and non-scalar aggregates.
 	CExpression *pexprThreestageDQA = PexprSplitHelper
 								(
@@ -167,13 +170,10 @@ CXformSplitDQA::Transform
 								pexprRelational,
 								phmexprcr,
 								pdrgpcrArgDQA,
-								false /*fSpillTo2Level*/
+								fScalarDQA ? CLogicalGbAgg::ThreeStageScalarDQA : CLogicalGbAgg::Other
 								);
         
 	pxfres->Add(pexprThreestageDQA);
-
-	CColRefArray *pDrgPcr = CLogicalGbAgg::PopConvert(pexpr->Pop())->Pdrgpcr();
-	BOOL fScalarDQA = (pDrgPcr == NULL || pDrgPcr->Size() == 0);
 
 	if (fScalarDQA)
 	{
@@ -200,7 +200,7 @@ CXformSplitDQA::Transform
 				pexprRelational,
 				phmexprcr,
 				pdrgpcrArgDQA,
-				true /*fSpillTo2Level*/
+				CLogicalGbAgg::TwoStageScalarDQA
 				);
 		pxfres->Add(pexprTwoStageScalarDQA);
 	}
@@ -231,7 +231,7 @@ CXformSplitDQA::Transform
 	 pexprRelational,
 	 phmexprcr,
 	 pdrgpcrArgDQA,
-	 fScalarDQA
+	 fScalarDQA ? CLogicalGbAgg::TwoStageScalarDQA : CLogicalGbAgg::Other
 	 );
 	
 	pxfres->Add(pexprTwoStageDQA);
@@ -271,7 +271,7 @@ CXformSplitDQA::PexprSplitIntoLocalDQAGlobalAgg
 	CExpression *pexprRelational,
 	ExprToColRefMap *phmexprcr,
 	CColRefArray *pdrgpcrArgDQA,
-	BOOL fTwoStageScalarDQA
+	CLogicalGbAgg::AggStage aggStage
 	)
 {
 	CExpression *pexprPrL = (*pexpr)[1];
@@ -379,7 +379,7 @@ CXformSplitDQA::PexprSplitIntoLocalDQAGlobalAgg
 								pdrgpcrGlobal,
 								true /* fSplit2LevelsOnly */,
 								false /* fAddDistinctColToLocalGb */,
-								fTwoStageScalarDQA
+								aggStage
 								);
 
 	return pexprGlobal;
@@ -412,7 +412,7 @@ CXformSplitDQA::PexprSplitHelper
 	CExpression *pexprRelational,
 	ExprToColRefMap *phmexprcr,
 	CColRefArray *pdrgpcrArgDQA,
-	BOOL fSpillTo2Level
+	CLogicalGbAgg::AggStage aggStage
 	)
 {
 	CExpression *pexprPrL = (*pexpr)[1];
@@ -425,6 +425,9 @@ CXformSplitDQA::PexprSplitHelper
 	CExpressionArray *pdrgpexprPrElFirstStage = GPOS_NEW(mp) CExpressionArray(mp);
 	CExpressionArray *pdrgpexprPrElSecondStage = GPOS_NEW(mp) CExpressionArray(mp);
 	CExpressionArray *pdrgpexprPrElLastStage = GPOS_NEW(mp) CExpressionArray(mp);
+	BOOL fSpillTo2Level = (aggStage == CLogicalGbAgg::TwoStageScalarDQA);
+
+
 
 	const ULONG arity = pexprPrL->Arity();
 	for (ULONG ul = 0; ul < arity; ul++)
@@ -495,7 +498,7 @@ CXformSplitDQA::PexprSplitHelper
 								pdrgpcrGlobal,
 								fSpillTo2Level,
 								true /* fAddDistinctColToLocalGb */,
-								fSpillTo2Level /* fTwoStageScalarDQA */
+								aggStage /* fTwoStageScalarDQA */
 								);
 
 	// clean-up the secondStage if spill to 2 level
@@ -702,7 +705,7 @@ CXformSplitDQA::PexprMultiLevelAggregation
 	CColRefArray *pdrgpcrLastStage,
 	BOOL fSplit2LevelsOnly,
 	BOOL fAddDistinctColToLocalGb,
-	BOOL fTwoStageScalarDQA
+	CLogicalGbAgg::AggStage aggStage
 	)
 {
 	GPOS_ASSERT(NULL != pexprRelational);
@@ -749,7 +752,7 @@ CXformSplitDQA::PexprMultiLevelAggregation
 									COperator::EgbaggtypeLocal,
 									fLocalAggGeneratesDuplicates,
 									pdrgpcrArgDQA,
-									fTwoStageScalarDQA
+									aggStage
 									);
 		pdrgpcrLastStage->AddRef();
 		popSecondStage = GPOS_NEW(mp) CLogicalGbAgg
@@ -757,7 +760,7 @@ CXformSplitDQA::PexprMultiLevelAggregation
 										 mp,
 										 pdrgpcrLastStage,
 										 COperator::EgbaggtypeGlobal, /* egbaggtype */
-										 fTwoStageScalarDQA
+										 aggStage
 										 );
 		pdrgpexprLastStage = pdrgpexprPrElThirdStage;
 	}
@@ -768,7 +771,7 @@ CXformSplitDQA::PexprMultiLevelAggregation
 										 mp,
 										 pdrgpcrLocal,
 										 COperator::EgbaggtypeLocal, /* egbaggtype */
-										 false /* m_isTwoStageScalarDQA */
+										 aggStage
 										 );
 		pdrgpcrLocal->AddRef();
 		pdrgpcrArgDQA->AddRef();
@@ -779,7 +782,7 @@ CXformSplitDQA::PexprMultiLevelAggregation
 									COperator::EgbaggtypeIntermediate,
 									false, /* fGeneratesDuplicates */
 									pdrgpcrArgDQA,
-									false /* m_isTwoStageScalarDQA */
+									aggStage
 									);
 	}
 
@@ -821,7 +824,7 @@ CXformSplitDQA::PexprMultiLevelAggregation
 														 mp,
 														 pdrgpcrLastStage,
 														 COperator::EgbaggtypeGlobal, /* egbaggtype */
-														 false /* m_isTwoStageScalarDQA */
+														 aggStage
 														 );
 	return GPOS_NEW(mp) CExpression
 						(

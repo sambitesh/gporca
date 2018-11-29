@@ -156,7 +156,7 @@ CXformGbAgg2HashAgg::Transform
 				pdrgpcrArgDQA,
 				CXformUtils::FMultiStageAgg(pexpr),
 				CXformUtils::FSplitDQAXform(pexpr),
-				popAgg->IsTwoStageScalarDQA()
+				popAgg->GetAggStage()
 				),
 			pexprRel,
 			pexprScalar

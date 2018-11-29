@@ -36,7 +36,7 @@ CPhysicalStreamAggDeduplicate::CPhysicalStreamAggDeduplicate
 	BOOL fGeneratesDuplicates,
 	BOOL fMultiStage,
 	BOOL isAggFromSplitDQA,
-	BOOL isTwoStageScalarDQA
+	CLogicalGbAgg::AggStage aggStage
 	)
 	:
 	CPhysicalStreamAgg
@@ -49,7 +49,7 @@ CPhysicalStreamAggDeduplicate::CPhysicalStreamAggDeduplicate
 	 NULL /*pdrgpcrGbMinusDistinct*/,
 	 fMultiStage,
 	 isAggFromSplitDQA,
-	 isTwoStageScalarDQA
+	 aggStage
 	 ),
 	m_pdrgpcrKeys(pdrgpcrKeys)
 {

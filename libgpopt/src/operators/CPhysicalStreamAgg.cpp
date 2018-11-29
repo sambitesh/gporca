@@ -42,7 +42,7 @@ CPhysicalStreamAgg::CPhysicalStreamAgg
 	CColRefArray *pdrgpcrArgDQA,
 	BOOL fMultiStage,
 	BOOL isAggFromSplitDQA,
-	BOOL isTwoStageScalarDQA
+	CLogicalGbAgg::AggStage aggStage
 	)
 	:
 	CPhysicalAgg
@@ -55,7 +55,7 @@ CPhysicalStreamAgg::CPhysicalStreamAgg
 		 pdrgpcrArgDQA,
 		 fMultiStage,
 		 isAggFromSplitDQA,
-		 isTwoStageScalarDQA
+		 aggStage
 		),
 	m_pos(NULL)
 {

@@ -40,12 +40,12 @@ CLogicalGbAgg::CLogicalGbAgg
 	)
 	:
 	CLogicalUnary(mp),
+	m_fGeneratesDuplicates(true),
+	m_pdrgpcrArgDQA(NULL),
 	m_pdrgpcr(NULL),
 	m_pdrgpcrMinimal(NULL),
 	m_egbaggtype(COperator::EgbaggtypeSentinel),
-	m_isTwoStageScalarDQA(false),
-	m_fGeneratesDuplicates(true),
-	m_pdrgpcrArgDQA(NULL)
+	m_aggStage(Other)
 {
 	m_fPattern = true;
 }
@@ -67,13 +67,12 @@ CLogicalGbAgg::CLogicalGbAgg
 	)
 	:
 	CLogicalUnary(mp),
+	m_fGeneratesDuplicates(false),
+	m_pdrgpcrArgDQA(NULL),
 	m_pdrgpcr(colref_array),
 	m_pdrgpcrMinimal(NULL),
 	m_egbaggtype(egbaggtype),
-	m_isTwoStageScalarDQA(false),
-	m_fGeneratesDuplicates(false),
-	m_pdrgpcrArgDQA(NULL)
-
+	m_aggStage(Other)
 {
 	if (COperator::EgbaggtypeLocal == egbaggtype)
 	{
@@ -93,17 +92,16 @@ CLogicalGbAgg::CLogicalGbAgg
 	IMemoryPool *mp,
 	CColRefArray *colref_array,
 	COperator::EGbAggType egbaggtype,
-	BOOL isTwoStageScalarDQA
+	AggStage aggStage
 	)
 	:
 	CLogicalUnary(mp),
+	m_fGeneratesDuplicates(false),
+	m_pdrgpcrArgDQA(NULL),
 	m_pdrgpcr(colref_array),
 	m_pdrgpcrMinimal(NULL),
 	m_egbaggtype(egbaggtype),
-	m_isTwoStageScalarDQA(isTwoStageScalarDQA),
-	m_fGeneratesDuplicates(false),
-	m_pdrgpcrArgDQA(NULL)
-
+	m_aggStage(aggStage)
 {
 	if (COperator::EgbaggtypeLocal == egbaggtype)
 	{
@@ -137,12 +135,12 @@ CLogicalGbAgg::CLogicalGbAgg
 	)
 	:
 	CLogicalUnary(mp),
+	m_fGeneratesDuplicates(fGeneratesDuplicates),
+	m_pdrgpcrArgDQA(pdrgpcrArgDQA),
 	m_pdrgpcr(colref_array),
 	m_pdrgpcrMinimal(NULL),
 	m_egbaggtype(egbaggtype),
-	m_isTwoStageScalarDQA(false),
-	m_fGeneratesDuplicates(fGeneratesDuplicates),
-	m_pdrgpcrArgDQA(pdrgpcrArgDQA)
+	m_aggStage(Other)
 {
 	GPOS_ASSERT(NULL != colref_array);
 	GPOS_ASSERT(COperator::EgbaggtypeSentinel > egbaggtype);
@@ -153,22 +151,22 @@ CLogicalGbAgg::CLogicalGbAgg
 }
 
 CLogicalGbAgg::CLogicalGbAgg
-(
+	(
 	IMemoryPool *mp,
 	CColRefArray *colref_array,
 	COperator::EGbAggType egbaggtype,
 	BOOL fGeneratesDuplicates,
 	CColRefArray *pdrgpcrArgDQA,
-	BOOL isTwoStageScalarDQA
+	AggStage aggStage
 	)
 	:
 	CLogicalUnary(mp),
+	m_fGeneratesDuplicates(fGeneratesDuplicates),
+	m_pdrgpcrArgDQA(pdrgpcrArgDQA),
 	m_pdrgpcr(colref_array),
 	m_pdrgpcrMinimal(NULL),
 	m_egbaggtype(egbaggtype),
-	m_isTwoStageScalarDQA(isTwoStageScalarDQA),
-	m_fGeneratesDuplicates(fGeneratesDuplicates),
-	m_pdrgpcrArgDQA(pdrgpcrArgDQA)
+	m_aggStage(aggStage)
 {
 	GPOS_ASSERT(NULL != colref_array);
 	GPOS_ASSERT(COperator::EgbaggtypeSentinel > egbaggtype);
@@ -195,12 +193,12 @@ CLogicalGbAgg::CLogicalGbAgg
 	)
 	:
 	CLogicalUnary(mp),
+	m_fGeneratesDuplicates(true),
+	m_pdrgpcrArgDQA(NULL),
 	m_pdrgpcr(colref_array),
 	m_pdrgpcrMinimal(pdrgpcrMinimal),
 	m_egbaggtype(egbaggtype),
-	m_isTwoStageScalarDQA(false),
-	m_fGeneratesDuplicates(true),
-	m_pdrgpcrArgDQA(NULL)
+	m_aggStage(Other)
 {
 	GPOS_ASSERT(NULL != colref_array);
 	GPOS_ASSERT(COperator::EgbaggtypeSentinel > egbaggtype);
@@ -237,12 +235,12 @@ CLogicalGbAgg::CLogicalGbAgg
 	)
 	:
 	CLogicalUnary(mp),
+	m_fGeneratesDuplicates(fGeneratesDuplicates),
+	m_pdrgpcrArgDQA(pdrgpcrArgDQA),
 	m_pdrgpcr(colref_array),
 	m_pdrgpcrMinimal(pdrgpcrMinimal),
 	m_egbaggtype(egbaggtype),
-	m_isTwoStageScalarDQA(false),
-	m_fGeneratesDuplicates(fGeneratesDuplicates),
-	m_pdrgpcrArgDQA(pdrgpcrArgDQA)
+	m_aggStage(Other)
 {
 	GPOS_ASSERT(NULL != colref_array);
 	GPOS_ASSERT(COperator::EgbaggtypeSentinel > egbaggtype);
@@ -738,7 +736,31 @@ CLogicalGbAgg::PstatsDerive
 BOOL
 CLogicalGbAgg::IsTwoStageScalarDQA()
 {
-	return m_isTwoStageScalarDQA ;
+	return (m_aggStage == TwoStageScalarDQA) ;
+}
+
+CLogicalGbAgg::AggStage
+CLogicalGbAgg::GetAggStage()
+{
+	return m_aggStage;
+}
+
+COperator::EGbAggType
+CLogicalGbAgg::Egbaggtype() const
+{
+	return m_egbaggtype;
+}
+// minimal grouping columns accessor
+CColRefArray *
+CLogicalGbAgg::PdrgpcrMinimal() const
+{
+	return m_pdrgpcrMinimal;
+}
+
+CColRefArray *
+CLogicalGbAgg::Pdrgpcr() const
+{
+	return m_pdrgpcr;
 }
 
 //---------------------------------------------------------------------------
@@ -787,7 +809,7 @@ CLogicalGbAgg::OsPrint
 	}
 
 	os	<< ", Generates Duplicates :[ " << FGeneratesDuplicates() << " ] ";
-	os	<< ", m_isTwoStageScalarDQA :[ " << m_isTwoStageScalarDQA << " ] ";
+	os	<< ", m_aggStage :[ " << m_aggStage << " ] ";
 	return os;
 }
 

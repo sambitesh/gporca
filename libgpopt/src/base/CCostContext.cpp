@@ -424,14 +424,14 @@ CCostContext::FBetterThan
 			// single stage agg do not get optimized when multi-stage aggs are present. Refer to COptimizationContext::FOptimizeAgg
 			// so even if mark 2-stage scalar DQA aggs as less optimal cost context, it will never lead to us picking a single stage agg.
 			// note: we are only concerned about 2-stage scalar DQA and NOT 2-stage non-scalar DQA.
-			if (IsTwoStageScalarDQA(this) && IsSplitDQA(pcc) && !IsTwoStageScalarDQA(pcc))
+			if (IsTwoStageScalarDQA(this) && IsThreeStageScalarDQA(pcc))
 			{
 				return false;
 			}
 			// if the comparison is between 3-stage agg and 2-stage scalar DQA aggs generated from CXformSplitDQA
 			// always mark 3-stage agg as having the better cost context.
 			// note: CXformSplitDQA will never generate a mix of scalar and non-scalar DQAs.
-			if (IsSplitDQA(this) && !IsTwoStageScalarDQA(this) && IsTwoStageScalarDQA(pcc))
+			if (IsThreeStageScalarDQA(this) && IsTwoStageScalarDQA(pcc))
 			{
 				return true;
 			}
@@ -521,20 +521,21 @@ CCostContext::IsTwoStageScalarDQA
 }
 
 BOOL
-CCostContext::IsSplitDQA
-		(
-				const CCostContext *pcc
-		)
-	const
+CCostContext::IsThreeStageScalarDQA
+(
+ const CCostContext *pcc
+ )
+const
 {
 	if(CUtils::FPhysicalAgg(pcc->Pgexpr()->Pop()))
 	{
 		CPhysicalAgg *popAgg = CPhysicalAgg::PopConvert(pcc->Pgexpr()->Pop());
-		return popAgg->IsAggFromSplitDQA();
+		return (popAgg->IsAggFromSplitDQA() && popAgg->IsThreeStageScalarDQA());
 	}
 
 	return false;
 }
+
 //---------------------------------------------------------------------------
 //	@function:
 //		CCostContext::CostCompute

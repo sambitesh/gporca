@@ -13,6 +13,7 @@
 
 #include "gpos/base.h"
 #include "gpopt/base/CUtils.h"
+#include "gpopt/operators/CLogicalGbAgg.h"
 #include "gpopt/operators/CPhysical.h"
 
 
@@ -44,7 +45,7 @@ namespace gpopt
 
 			BOOL m_isAggFromSplitDQA;
 
-			BOOL m_isTwoStageScalarDQA;
+			CLogicalGbAgg::AggStage m_aggStage;
 
 			// compute required distribution of the n-th child of an intermediate aggregate
 			CDistributionSpec *PdsRequiredIntermediateAgg(IMemoryPool *mp, ULONG  ulOptReq) const;
@@ -119,12 +120,14 @@ namespace gpopt
 				CColRefArray *pdrgpcrArgDQA,
 				BOOL fMultiStage,
 				BOOL isAggFromSplitDQA,
-				BOOL isTwoStageScalarDQA
+				CLogicalGbAgg::AggStage aggStage
 				);
 
 			BOOL IsAggFromSplitDQA();
 
 			BOOL IsTwoStageScalarDQA();
+
+			BOOL IsThreeStageScalarDQA();
 
 			// dtor
 			virtual
