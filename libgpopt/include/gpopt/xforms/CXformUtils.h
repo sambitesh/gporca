@@ -1084,7 +1084,7 @@ namespace gpopt
 
 			// check if given xform is an Agg CXformSplitDQA
 			static
-			BOOL FSplitDQAXform(CExpression *pexprAgg);
+			BOOL FAggGenBySplitDQAXform(CExpression *pexprAgg);
 
 			// check if given expression is a multi-stage Agg based on origin xform
 			static

@@ -88,7 +88,7 @@ CLogicalGbAgg::CLogicalGbAgg
 }
 
 CLogicalGbAgg::CLogicalGbAgg
-(
+	(
 	IMemoryPool *mp,
 	CColRefArray *colref_array,
 	COperator::EGbAggType egbaggtype,
@@ -734,13 +734,19 @@ CLogicalGbAgg::PstatsDerive
 }
 
 BOOL
-CLogicalGbAgg::IsTwoStageScalarDQA()
+CLogicalGbAgg::IsTwoStageScalarDQA() const
 {
 	return (m_aggStage == TwoStageScalarDQA) ;
 }
 
+BOOL
+CLogicalGbAgg::IsThreeStageScalarDQA() const
+{
+	return (m_aggStage == ThreeStageScalarDQA) ;
+}
+
 CLogicalGbAgg::AggStage
-CLogicalGbAgg::GetAggStage()
+CLogicalGbAgg::GetAggStage() const
 {
 	return m_aggStage;
 }
@@ -809,7 +815,17 @@ CLogicalGbAgg::OsPrint
 	}
 
 	os	<< ", Generates Duplicates :[ " << FGeneratesDuplicates() << " ] ";
-	os	<< ", m_aggStage :[ " << m_aggStage << " ] ";
+
+	if(IsTwoStageScalarDQA())
+	{
+		os	<< ", m_aggStage :[  Two Stage Scalar DQA  ] ";
+	}
+
+	if(IsThreeStageScalarDQA())
+	{
+		os	<< ", m_aggStage :[  Three Stage Scalar DQA  ] ";
+	}
+
 	return os;
 }
 

@@ -47,15 +47,15 @@ CPhysicalStreamAgg::CPhysicalStreamAgg
 	:
 	CPhysicalAgg
 		(
-		 mp,
-		 colref_array,
-		 pdrgpcrMinimal,
-		 egbaggtype,
-		 fGeneratesDuplicates,
-		 pdrgpcrArgDQA,
-		 fMultiStage,
-		 isAggFromSplitDQA,
-		 aggStage
+		mp,
+		colref_array,
+		pdrgpcrMinimal,
+		egbaggtype,
+		fGeneratesDuplicates,
+		pdrgpcrArgDQA,
+		fMultiStage,
+		isAggFromSplitDQA,
+		aggStage
 		),
 	m_pos(NULL)
 {

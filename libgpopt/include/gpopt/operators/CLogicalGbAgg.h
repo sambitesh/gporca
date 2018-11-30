@@ -86,21 +86,21 @@ namespace gpopt
 
 			// ctor
 			CLogicalGbAgg
-			(
-			 IMemoryPool *mp,
-			 CColRefArray *colref_array,
-			 COperator::EGbAggType egbaggtype
-			);
+				(
+				IMemoryPool *mp,
+				CColRefArray *colref_array,
+				COperator::EGbAggType egbaggtype
+				);
 			
 			// ctor
 			CLogicalGbAgg
-			(
-			 IMemoryPool *mp,
-			 CColRefArray *colref_array,
-			 COperator::EGbAggType egbaggtype,
-			 BOOL fGeneratesDuplicates,
-			 CColRefArray *pdrgpcrArgDQA
-			 );
+				(
+				IMemoryPool *mp,
+				CColRefArray *colref_array,
+				COperator::EGbAggType egbaggtype,
+				BOOL fGeneratesDuplicates,
+				CColRefArray *pdrgpcrArgDQA
+				);
 
 			// ctor
 			CLogicalGbAgg
@@ -122,9 +122,14 @@ namespace gpopt
 				CColRefArray *pdrgpcrArgDQA
 				);
 
-			BOOL IsTwoStageScalarDQA();
+			// is this part of Two Stage Scalar DQA
+			BOOL IsTwoStageScalarDQA() const;
 
-			AggStage GetAggStage();
+			// is this part of Three Stage Scalar DQA
+			BOOL IsThreeStageScalarDQA() const;
+
+			// return the m_aggStage
+			AggStage GetAggStage() const;
 
 			// dtor
 			virtual

@@ -680,19 +680,19 @@ CPhysicalAgg::EpetRewindability
 }
 
 BOOL
-CPhysicalAgg::IsTwoStageScalarDQA()
+CPhysicalAgg::IsTwoStageScalarDQA() const
 {
 	return (m_aggStage == CLogicalGbAgg::TwoStageScalarDQA);
 }
 
 BOOL
-CPhysicalAgg::IsThreeStageScalarDQA()
+CPhysicalAgg::IsThreeStageScalarDQA() const
 {
 	return (m_aggStage == CLogicalGbAgg::ThreeStageScalarDQA);
 }
 
 BOOL
-CPhysicalAgg::IsAggFromSplitDQA()
+CPhysicalAgg::IsAggFromSplitDQA() const
 {
 	return m_isAggFromSplitDQA ;
 }
@@ -742,10 +742,16 @@ CPhysicalAgg::OsPrint
 	}
 	os	<< ", Generates Duplicates :[ " << FGeneratesDuplicates() << " ] ";
 
-	if (m_isAggFromSplitDQA)
+	if (IsTwoStageScalarDQA())
 	{
-		os	<< ", m_aggStage :[ " << m_aggStage << " ] ";
-		os	<< ", m_isAggFromSplitDQA :[ " << m_isAggFromSplitDQA << " ] ";
+		os	<< ", m_aggStage :[ Two Stage Scalar DQA ] ";
+		os	<< ", Origin :[  CXformSplitDQA  ] ";
+	}
+
+	if (IsThreeStageScalarDQA())
+	{
+		os	<< ", m_aggStage :[ Three Stage Scalar DQA ] ";
+		os	<< ", Origin :[  CXformSplitDQA  ] ";
 	}
 
 	return os;

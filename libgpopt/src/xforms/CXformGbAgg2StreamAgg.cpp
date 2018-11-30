@@ -141,7 +141,7 @@ CXformGbAgg2StreamAgg::Transform
 				popAgg->FGeneratesDuplicates(),
 				pdrgpcrArgDQA,
 				CXformUtils::FMultiStageAgg(pexpr),
-				CXformUtils::FSplitDQAXform(pexpr),
+				CXformUtils::FAggGenBySplitDQAXform(pexpr),
 				popAgg->GetAggStage()
 				),
 			pexprRel,

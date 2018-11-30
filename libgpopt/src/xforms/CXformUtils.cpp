@@ -1851,7 +1851,7 @@ CXformUtils::FSplitAggXform
 }
 
 BOOL
-CXformUtils::FSplitDQAXform
+CXformUtils::FAggGenBySplitDQAXform
 	(
 	CExpression *pexprAgg
 	)

@@ -161,7 +161,7 @@ CXformSplitDQA::Transform
 	BOOL fScalarDQA = (pDrgPcr == NULL || pDrgPcr->Size() == 0);
 
 	// multi-stage for both scalar and non-scalar aggregates.
-	CExpression *pexprThreestageDQA = PexprSplitHelper
+	CExpression *pexprThreeStageDQA = PexprSplitHelper
 								(
 								mp,
 								col_factory,
@@ -173,7 +173,7 @@ CXformSplitDQA::Transform
 								fScalarDQA ? CLogicalGbAgg::ThreeStageScalarDQA : CLogicalGbAgg::Other
 								);
         
-	pxfres->Add(pexprThreestageDQA);
+	pxfres->Add(pexprThreeStageDQA);
 
 	if (fScalarDQA)
 	{
@@ -223,16 +223,16 @@ CXformSplitDQA::Transform
 	//				+--CScalarIdent "ColRef_0010" (10)
 
 	CExpression *pexprTwoStageDQA = PexprSplitIntoLocalDQAGlobalAgg
-	(
-	 mp,
-	 col_factory,
-	 md_accessor,
-	 pexpr,
-	 pexprRelational,
-	 phmexprcr,
-	 pdrgpcrArgDQA,
-	 fScalarDQA ? CLogicalGbAgg::TwoStageScalarDQA : CLogicalGbAgg::Other
-	 );
+			(
+			mp,
+			col_factory,
+			md_accessor,
+			pexpr,
+			pexprRelational,
+			phmexprcr,
+			pdrgpcrArgDQA,
+			fScalarDQA ? CLogicalGbAgg::TwoStageScalarDQA : CLogicalGbAgg::Other
+			);
 	
 	pxfres->Add(pexprTwoStageDQA);
 	

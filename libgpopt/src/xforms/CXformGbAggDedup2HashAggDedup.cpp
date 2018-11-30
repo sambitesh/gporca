@@ -93,7 +93,7 @@ CXformGbAggDedup2HashAggDedup::Transform
 						pdrgpcrKeys,
 						popAggDedup->FGeneratesDuplicates(),
 						CXformUtils::FMultiStageAgg(pexpr),
-						CXformUtils::FSplitDQAXform(pexpr),
+						CXformUtils::FAggGenBySplitDQAXform(pexpr),
 						popAggDedup->GetAggStage()
 						),
 			pexprRel,
