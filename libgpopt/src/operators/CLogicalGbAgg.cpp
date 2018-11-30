@@ -45,7 +45,7 @@ CLogicalGbAgg::CLogicalGbAgg
 	m_pdrgpcr(NULL),
 	m_pdrgpcrMinimal(NULL),
 	m_egbaggtype(COperator::EgbaggtypeSentinel),
-	m_aggStage(Other)
+	m_aggStage(EasOthers)
 {
 	m_fPattern = true;
 }
@@ -72,7 +72,7 @@ CLogicalGbAgg::CLogicalGbAgg
 	m_pdrgpcr(colref_array),
 	m_pdrgpcrMinimal(NULL),
 	m_egbaggtype(egbaggtype),
-	m_aggStage(Other)
+	m_aggStage(EasOthers)
 {
 	if (COperator::EgbaggtypeLocal == egbaggtype)
 	{
@@ -92,7 +92,7 @@ CLogicalGbAgg::CLogicalGbAgg
 	IMemoryPool *mp,
 	CColRefArray *colref_array,
 	COperator::EGbAggType egbaggtype,
-	AggStage aggStage
+	EAggStage aggStage
 	)
 	:
 	CLogicalUnary(mp),
@@ -140,7 +140,7 @@ CLogicalGbAgg::CLogicalGbAgg
 	m_pdrgpcr(colref_array),
 	m_pdrgpcrMinimal(NULL),
 	m_egbaggtype(egbaggtype),
-	m_aggStage(Other)
+	m_aggStage(EasOthers)
 {
 	GPOS_ASSERT(NULL != colref_array);
 	GPOS_ASSERT(COperator::EgbaggtypeSentinel > egbaggtype);
@@ -157,7 +157,7 @@ CLogicalGbAgg::CLogicalGbAgg
 	COperator::EGbAggType egbaggtype,
 	BOOL fGeneratesDuplicates,
 	CColRefArray *pdrgpcrArgDQA,
-	AggStage aggStage
+	EAggStage aggStage
 	)
 	:
 	CLogicalUnary(mp),
@@ -198,7 +198,7 @@ CLogicalGbAgg::CLogicalGbAgg
 	m_pdrgpcr(colref_array),
 	m_pdrgpcrMinimal(pdrgpcrMinimal),
 	m_egbaggtype(egbaggtype),
-	m_aggStage(Other)
+	m_aggStage(EasOthers)
 {
 	GPOS_ASSERT(NULL != colref_array);
 	GPOS_ASSERT(COperator::EgbaggtypeSentinel > egbaggtype);
@@ -240,7 +240,7 @@ CLogicalGbAgg::CLogicalGbAgg
 	m_pdrgpcr(colref_array),
 	m_pdrgpcrMinimal(pdrgpcrMinimal),
 	m_egbaggtype(egbaggtype),
-	m_aggStage(Other)
+	m_aggStage(EasOthers)
 {
 	GPOS_ASSERT(NULL != colref_array);
 	GPOS_ASSERT(COperator::EgbaggtypeSentinel > egbaggtype);
@@ -736,37 +736,13 @@ CLogicalGbAgg::PstatsDerive
 BOOL
 CLogicalGbAgg::IsTwoStageScalarDQA() const
 {
-	return (m_aggStage == TwoStageScalarDQA) ;
+	return (m_aggStage == EasTwoStageScalarDQA) ;
 }
 
 BOOL
 CLogicalGbAgg::IsThreeStageScalarDQA() const
 {
-	return (m_aggStage == ThreeStageScalarDQA) ;
-}
-
-CLogicalGbAgg::AggStage
-CLogicalGbAgg::GetAggStage() const
-{
-	return m_aggStage;
-}
-
-COperator::EGbAggType
-CLogicalGbAgg::Egbaggtype() const
-{
-	return m_egbaggtype;
-}
-// minimal grouping columns accessor
-CColRefArray *
-CLogicalGbAgg::PdrgpcrMinimal() const
-{
-	return m_pdrgpcrMinimal;
-}
-
-CColRefArray *
-CLogicalGbAgg::Pdrgpcr() const
-{
-	return m_pdrgpcr;
+	return (m_aggStage == EasThreeStageScalarDQA) ;
 }
 
 //---------------------------------------------------------------------------

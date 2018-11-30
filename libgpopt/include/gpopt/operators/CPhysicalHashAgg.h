@@ -47,7 +47,7 @@ namespace gpopt
 				CColRefArray *pdrgpcrArgDQA,
 				BOOL fMultiStage,
 				BOOL isAggFromSplitDQA,
-				CLogicalGbAgg::AggStage aggStage
+				CLogicalGbAgg::EAggStage aggStage
 				);
 
 			// dtor

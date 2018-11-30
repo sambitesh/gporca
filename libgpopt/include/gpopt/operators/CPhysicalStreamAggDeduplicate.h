@@ -47,7 +47,7 @@ namespace gpopt
 				BOOL fGeneratesDuplicates,
 				BOOL fMultiStage,
 				BOOL isAggFromSplitDQA,
-				CLogicalGbAgg::AggStage aggStage
+				CLogicalGbAgg::EAggStage aggStage
 				);
 
 			// dtor

@@ -20,6 +20,8 @@ namespace gpopt
 {
 	// fwd declaration
 	class CColRefSet;
+
+	class CLogicalGbAgg;
 	
 	//---------------------------------------------------------------------------
 	//	@class:
@@ -53,11 +55,17 @@ namespace gpopt
 
 		public:
 
-			enum AggStage
+			// the below enum specifically covers only 2 & 3 stage
+			// scalar dqa, as they are used to find the one having
+			// better cost context, rest of the aggs falls in others
+			// category.
+			enum EAggStage
 			{
-				TwoStageScalarDQA,
-				ThreeStageScalarDQA,
-				Other
+				EasTwoStageScalarDQA,
+				EasThreeStageScalarDQA,
+				EasOthers,
+
+				EasSentinel
 			};
 
 			// ctor
@@ -70,7 +78,7 @@ namespace gpopt
 				IMemoryPool *mp,
 				CColRefArray *colref_array,
 				COperator::EGbAggType egbaggtype,
-				AggStage aggStage
+				EAggStage aggStage
 				);
 
 			// ctor
@@ -81,7 +89,7 @@ namespace gpopt
 				COperator::EGbAggType egbaggtype,
 				BOOL fGeneratesDuplicates,
 				CColRefArray *pdrgpcrArgDQA,
-				AggStage aggStage
+				EAggStage aggStage
 				);
 
 			// ctor
@@ -129,7 +137,10 @@ namespace gpopt
 			BOOL IsThreeStageScalarDQA() const;
 
 			// return the m_aggStage
-			AggStage GetAggStage() const;
+			EAggStage AggStage() const
+			{
+				return m_aggStage;
+			}
 
 			// dtor
 			virtual
@@ -165,7 +176,10 @@ namespace gpopt
 			ULONG HashValue() const;
 
 			// grouping columns accessor
-			CColRefArray *Pdrgpcr() const;
+			CColRefArray *Pdrgpcr() const
+			{
+				return m_pdrgpcr;
+			}
 
 			// array of columns used in distinct qualified aggregates (DQA)
 			CColRefArray *PdrgpcrArgDQA() const
@@ -174,7 +188,10 @@ namespace gpopt
 			}
 
 			// aggregate type
-			COperator::EGbAggType Egbaggtype() const;
+			COperator::EGbAggType Egbaggtype() const
+			{
+				return m_egbaggtype;
+			}
 
 			// is a global aggregate?
 			BOOL FGlobal() const
@@ -183,7 +200,10 @@ namespace gpopt
 			}
 
 			// minimal grouping columns accessor
-			CColRefArray *PdrgpcrMinimal() const;
+			CColRefArray *PdrgpcrMinimal() const
+			{
+				return m_pdrgpcrMinimal;
+			}
 
 			// return a copy of the operator with remapped columns
 			virtual
@@ -297,20 +317,20 @@ namespace gpopt
 
 		private:
 
-		// private copy ctor
-		CLogicalGbAgg(const CLogicalGbAgg &);
+			// private copy ctor
+			CLogicalGbAgg(const CLogicalGbAgg &);
 
-		// array of grouping columns
-		CColRefArray *m_pdrgpcr;
+			// array of grouping columns
+			CColRefArray *m_pdrgpcr;
 
-		// minimal grouping columns based on FD's
-		CColRefArray *m_pdrgpcrMinimal;
+			// minimal grouping columns based on FD's
+			CColRefArray *m_pdrgpcrMinimal;
 
-		// local / intermediate / global aggregate
-		COperator::EGbAggType m_egbaggtype;
+			// local / intermediate / global aggregate
+			COperator::EGbAggType m_egbaggtype;
 
-		// which type of multi-stage agg it is
-		AggStage m_aggStage;
+			// which type of multi-stage agg it is
+			EAggStage m_aggStage;
 
 	}; // class CLogicalGbAgg
 

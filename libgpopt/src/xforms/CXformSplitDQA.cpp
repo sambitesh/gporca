@@ -157,8 +157,8 @@ CXformSplitDQA::Transform
 		pexprRelational = pexprChildProject;
 	}
 
-	CColRefArray *pDrgPcr = CLogicalGbAgg::PopConvert(pexpr->Pop())->Pdrgpcr();
-	BOOL fScalarDQA = (pDrgPcr == NULL || pDrgPcr->Size() == 0);
+	CColRefArray *grouping_colref_array = CLogicalGbAgg::PopConvert(pexpr->Pop())->Pdrgpcr();
+	BOOL fScalarDQA = (grouping_colref_array == NULL || grouping_colref_array->Size() == 0);
 
 	// multi-stage for both scalar and non-scalar aggregates.
 	CExpression *pexprThreeStageDQA = PexprSplitHelper
@@ -170,7 +170,7 @@ CXformSplitDQA::Transform
 								pexprRelational,
 								phmexprcr,
 								pdrgpcrArgDQA,
-								fScalarDQA ? CLogicalGbAgg::ThreeStageScalarDQA : CLogicalGbAgg::Other
+								fScalarDQA ? CLogicalGbAgg::EasThreeStageScalarDQA : CLogicalGbAgg::EasOthers
 								);
         
 	pxfres->Add(pexprThreeStageDQA);
@@ -180,16 +180,17 @@ CXformSplitDQA::Transform
 		// generate two-stage agg for scalar DQA case
 		// this transform is useful for cases where distinct column is same as distributed column.
 		// for a query like "select count(distinct a) from bar;"
-		// we generate a two stage agg where the aggregate operator gives us the distinct values
+		// we generate a two stage agg where the aggregate operator gives us the distinct values.
+		// CScalarProjectList for the Local agg below is empty on purpose.
 
 		//		+--CLogicalGbAgg( Global ) Grp Cols: [][Global]
 		//		|--CLogicalGbAgg( Local ) Grp Cols: ["a" (0)][Local],
 		//		|  |--CLogicalGet "bar" ("bar"),
 		//		|  +--CScalarProjectList
 		//		+--CScalarProjectList
-		//		+--CScalarProjectElement "count" (9)
-		//			+--CScalarAggFunc (count , Distinct: false , Aggregate Stage: Global)
-		//				+--CScalarIdent "a" (0)
+		//			+--CScalarProjectElement "count" (9)
+		//				+--CScalarAggFunc (count , Distinct: false , Aggregate Stage: Global)
+		//					+--CScalarIdent "a" (0)
 
 		CExpression *pexprTwoStageScalarDQA = PexprSplitHelper
 				(
@@ -200,7 +201,7 @@ CXformSplitDQA::Transform
 				pexprRelational,
 				phmexprcr,
 				pdrgpcrArgDQA,
-				CLogicalGbAgg::TwoStageScalarDQA
+				CLogicalGbAgg::EasTwoStageScalarDQA
 				);
 		pxfres->Add(pexprTwoStageScalarDQA);
 	}
@@ -231,7 +232,7 @@ CXformSplitDQA::Transform
 			pexprRelational,
 			phmexprcr,
 			pdrgpcrArgDQA,
-			fScalarDQA ? CLogicalGbAgg::TwoStageScalarDQA : CLogicalGbAgg::Other
+			fScalarDQA ? CLogicalGbAgg::EasTwoStageScalarDQA : CLogicalGbAgg::EasOthers
 			);
 	
 	pxfres->Add(pexprTwoStageDQA);
@@ -271,7 +272,7 @@ CXformSplitDQA::PexprSplitIntoLocalDQAGlobalAgg
 	CExpression *pexprRelational,
 	ExprToColRefMap *phmexprcr,
 	CColRefArray *pdrgpcrArgDQA,
-	CLogicalGbAgg::AggStage aggStage
+	CLogicalGbAgg::EAggStage aggStage
 	)
 {
 	CExpression *pexprPrL = (*pexpr)[1];
@@ -412,7 +413,7 @@ CXformSplitDQA::PexprSplitHelper
 	CExpression *pexprRelational,
 	ExprToColRefMap *phmexprcr,
 	CColRefArray *pdrgpcrArgDQA,
-	CLogicalGbAgg::AggStage aggStage
+	CLogicalGbAgg::EAggStage aggStage
 	)
 {
 	CExpression *pexprPrL = (*pexpr)[1];
@@ -425,7 +426,7 @@ CXformSplitDQA::PexprSplitHelper
 	CExpressionArray *pdrgpexprPrElFirstStage = GPOS_NEW(mp) CExpressionArray(mp);
 	CExpressionArray *pdrgpexprPrElSecondStage = GPOS_NEW(mp) CExpressionArray(mp);
 	CExpressionArray *pdrgpexprPrElLastStage = GPOS_NEW(mp) CExpressionArray(mp);
-	BOOL fSpillTo2Level = (aggStage == CLogicalGbAgg::TwoStageScalarDQA);
+	BOOL fSpillTo2Level = (aggStage == CLogicalGbAgg::EasTwoStageScalarDQA);
 
 
 
@@ -705,7 +706,7 @@ CXformSplitDQA::PexprMultiLevelAggregation
 	CColRefArray *pdrgpcrLastStage,
 	BOOL fSplit2LevelsOnly,
 	BOOL fAddDistinctColToLocalGb,
-	CLogicalGbAgg::AggStage aggStage
+	CLogicalGbAgg::EAggStage aggStage
 	)
 {
 	GPOS_ASSERT(NULL != pexprRelational);

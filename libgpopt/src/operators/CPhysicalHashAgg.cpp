@@ -39,21 +39,21 @@ CPhysicalHashAgg::CPhysicalHashAgg
 	CColRefArray *pdrgpcrArgDQA,
 	BOOL fMultiStage,
 	BOOL isAggFromSplitDQA,
-	CLogicalGbAgg::AggStage aggStage
+	CLogicalGbAgg::EAggStage aggStage
 	)
 	:
 	CPhysicalAgg
-		(
-		 mp,
-		 colref_array,
-		 pdrgpcrMinimal,
-		 egbaggtype,
-		 fGeneratesDuplicates,
-		 pdrgpcrArgDQA,
-		 fMultiStage,
-		 isAggFromSplitDQA,
-		 aggStage
-		)
+	(
+	mp,
+	colref_array,
+	pdrgpcrMinimal,
+	egbaggtype,
+	fGeneratesDuplicates,
+	pdrgpcrArgDQA,
+	fMultiStage,
+	isAggFromSplitDQA,
+	aggStage
+	)
 {}
 
 

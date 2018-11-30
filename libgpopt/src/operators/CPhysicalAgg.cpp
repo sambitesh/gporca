@@ -41,7 +41,7 @@ CPhysicalAgg::CPhysicalAgg
 	CColRefArray *pdrgpcrArgDQA,
 	BOOL fMultiStage,
 	BOOL isAggFromSplitDQA,
-	CLogicalGbAgg::AggStage aggStage
+	CLogicalGbAgg::EAggStage aggStage
 	)
 	:
 	CPhysical(mp),
@@ -682,13 +682,13 @@ CPhysicalAgg::EpetRewindability
 BOOL
 CPhysicalAgg::IsTwoStageScalarDQA() const
 {
-	return (m_aggStage == CLogicalGbAgg::TwoStageScalarDQA);
+	return (m_aggStage == CLogicalGbAgg::EasTwoStageScalarDQA);
 }
 
 BOOL
 CPhysicalAgg::IsThreeStageScalarDQA() const
 {
-	return (m_aggStage == CLogicalGbAgg::ThreeStageScalarDQA);
+	return (m_aggStage == CLogicalGbAgg::EasThreeStageScalarDQA);
 }
 
 BOOL
@@ -742,16 +742,15 @@ CPhysicalAgg::OsPrint
 	}
 	os	<< ", Generates Duplicates :[ " << FGeneratesDuplicates() << " ] ";
 
+	// note: 2-stage Scalar DQA and 3-stage scalar DQA are created by CXformSplitDQA only
 	if (IsTwoStageScalarDQA())
 	{
 		os	<< ", m_aggStage :[ Two Stage Scalar DQA ] ";
-		os	<< ", Origin :[  CXformSplitDQA  ] ";
 	}
 
 	if (IsThreeStageScalarDQA())
 	{
 		os	<< ", m_aggStage :[ Three Stage Scalar DQA ] ";
-		os	<< ", Origin :[  CXformSplitDQA  ] ";
 	}
 
 	return os;

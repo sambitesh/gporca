@@ -5,9 +5,9 @@
 
 	EXPLAIN SELECT COUNT(DISTINCT(a)) FROM bar;
 
-	Objective: Earlier, CXformSplitDQA would only generate 3-stage aggs and not 2-stage aggs.
-	If the 3-stage agg doesn't get optimized, ORCA would end up picking a 1-stage agg.
-	Now we make sure, if 3-stage agg is not optimized, ORCA has the option of 2-stage agg too.
+	Objective: With traceflag EopttraceForceThreeStageScalarDQA on, in addition to 1 stage scalar dqa, ORCA
+	generates 2 stage and 3 stage scalar dqa alternatives. If 3-Stage alternative, does not get
+	optimized, ORCA should pick 2 stage alternative instead of 1 stage if available.
 
 	The plan for above query should now look like below :
 

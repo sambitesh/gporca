@@ -142,7 +142,7 @@ CXformGbAgg2StreamAgg::Transform
 				pdrgpcrArgDQA,
 				CXformUtils::FMultiStageAgg(pexpr),
 				CXformUtils::FAggGenBySplitDQAXform(pexpr),
-				popAgg->GetAggStage()
+				popAgg->AggStage()
 				),
 			pexprRel,
 			pexprScalar

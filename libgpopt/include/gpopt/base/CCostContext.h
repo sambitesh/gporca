@@ -254,10 +254,10 @@ namespace gpopt
 			BOOL FBetterThan(const CCostContext *pcc) const;
 
 			// is this cost context of a two stage scalar DQA created by CXformSplitDQA
-			BOOL IsTwoStageScalarDQA(const CCostContext *pcc) const;
+			BOOL IsTwoStageScalarDQACostCtxt(const CCostContext *pcc) const;
 
 			// is this cost context of a three stage scalar DQA created by CXformSplitDQA
-			BOOL IsThreeStageScalarDQA(const CCostContext *pcc) const;
+			BOOL IsThreeStageScalarDQACostCtxt(const CCostContext *pcc) const;
 
 			// equality function
 			static

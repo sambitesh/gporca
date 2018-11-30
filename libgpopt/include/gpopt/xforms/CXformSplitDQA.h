@@ -52,7 +52,7 @@ namespace gpopt
 							CColRefArray *pdrgpcrLastStage,
 							BOOL fSplit2LevelsOnly,
 							BOOL fAddDistinctColToLocalGb,
-							CLogicalGbAgg::AggStage aggStage
+							CLogicalGbAgg::EAggStage aggStage
 							);
 
 			// split DQA into a local DQA and global non-DQA aggregate function
@@ -66,7 +66,7 @@ namespace gpopt
 							CExpression *pexprRelational,
 							ExprToColRefMap *phmexprcr,
 							CColRefArray *pdrgpcrArgDQA,
-							CLogicalGbAgg::AggStage aggStage
+							CLogicalGbAgg::EAggStage aggStage
 							);
 
 			// helper function to split DQA
@@ -80,7 +80,7 @@ namespace gpopt
 				CExpression *pexprRelational,
 				ExprToColRefMap *phmexprcr,
 				CColRefArray *pdrgpcrArgDQA,
-				CLogicalGbAgg::AggStage aggStage
+				CLogicalGbAgg::EAggStage aggStage
 				);
 
 			// given a scalar aggregate generate the local, intermediate and global

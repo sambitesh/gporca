@@ -5,8 +5,8 @@
 	INSERT INTO FOO SELECT i,i,i FROM generate_series(1, 100000)i;
  	EXPLAIN SELECT COUNT(DISTINCT(b)) FROM foo GROUP BY c;
 	
-	Objective: Even with both Scalar DQA and non-scalar aggregate present, make sure we still pick
-		   three-stage aggregate like below.
+	Objective: In case of non-scalar DQA, 2 and 3 stage alternative are generated, chose
+	the one with best cost.
 
 			QUERY PLAN
 	------------------------------------------------------------------------

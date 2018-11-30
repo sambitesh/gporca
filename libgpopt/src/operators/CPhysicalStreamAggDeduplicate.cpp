@@ -36,21 +36,21 @@ CPhysicalStreamAggDeduplicate::CPhysicalStreamAggDeduplicate
 	BOOL fGeneratesDuplicates,
 	BOOL fMultiStage,
 	BOOL isAggFromSplitDQA,
-	CLogicalGbAgg::AggStage aggStage
+	CLogicalGbAgg::EAggStage aggStage
 	)
 	:
 	CPhysicalStreamAgg
 	(
-	 mp,
-	 colref_array,
-	 pdrgpcrMinimal,
-	 egbaggtype,
-	 fGeneratesDuplicates,
-	 NULL /*pdrgpcrGbMinusDistinct*/,
-	 fMultiStage,
-	 isAggFromSplitDQA,
-	 aggStage
-	 ),
+	mp,
+	colref_array,
+	pdrgpcrMinimal,
+	egbaggtype,
+	fGeneratesDuplicates,
+	NULL /*pdrgpcrGbMinusDistinct*/,
+	fMultiStage,
+	isAggFromSplitDQA,
+	aggStage
+	),
 	m_pdrgpcrKeys(pdrgpcrKeys)
 {
 	GPOS_ASSERT(NULL != pdrgpcrKeys);
