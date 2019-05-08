@@ -239,17 +239,19 @@ CPhysicalAgg::PdsRequiredAgg
 
 	if (COperator::EgbaggtypeLocal == m_egbaggtype && m_pdrgpcrArgDQA != NULL && 0 != m_pdrgpcrArgDQA->Size())
 	{
-		if (ulOptReq == 0) {
+		if (ulOptReq == 0)
+		{
 			return PdsMaximalHashed(mp, m_pdrgpcrArgDQA);
 		}
 		else
 		{
 			GPOS_ASSERT(1 == ulOptReq);
-			CColRefArray *combinedCols = GPOS_NEW(mp) CColRefArray(mp);
-			combinedCols->AppendArray(m_pdrgpcr);
-			combinedCols->AppendArray(m_pdrgpcrArgDQA);
-			CDistributionSpec *pdsSpec = PdsMaximalHashed(mp, combinedCols);
-			combinedCols->Release();
+			GPOS_ASSERT(0 < m_pdrgpcr->Size());
+			CColRefArray *grpAndDistinctCols = GPOS_NEW(mp) CColRefArray(mp);
+			grpAndDistinctCols->AppendArray(m_pdrgpcr);
+			grpAndDistinctCols->AppendArray(m_pdrgpcrArgDQA);
+			CDistributionSpec *pdsSpec = PdsMaximalHashed(mp, grpAndDistinctCols);
+			grpAndDistinctCols->Release();
 			return pdsSpec;
 		}
 	}
