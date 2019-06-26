@@ -338,7 +338,9 @@ CStatsPredUtils::IsPredCmpColsOrIgnoreCast
 	CExpression *expr,
 	const CColRef **col_ref_left,
 	CStatsPred::EStatsCmpType *stats_pred_cmp_type,
-	const CColRef **col_ref_right
+	const CColRef **col_ref_right,
+	BOOL &left_is_null,
+	BOOL &right_is_null
 	)
 {
 	GPOS_ASSERT(NULL != col_ref_left);
@@ -386,6 +388,9 @@ CStatsPredUtils::IsPredCmpColsOrIgnoreCast
 	(*col_ref_left) = CCastUtils::PcrExtractFromScIdOrCastScId(expr_left);
 	(*col_ref_right) = CCastUtils::PcrExtractFromScIdOrCastScId(expr_right);
 
+	if (NULL == *col_ref_left && NULL == *col_ref_right)
+		return false;
+
 	if (NULL == *col_ref_left || NULL == *col_ref_right)
 	{
 		// if the scalar cmp is of equality type, we may not have been able to extract
@@ -394,6 +399,18 @@ CStatsPredUtils::IsPredCmpColsOrIgnoreCast
 		// in such cases, check if there is still a possibility to extract scalar ident,
 		// if there is more than one column reference on either side, this is unsupported
 		// If supported, mark the comparison as NDV-based
+
+
+		if (NULL == *col_ref_left)
+		{
+			left_is_null = true;
+		}
+
+		if (NULL == *col_ref_right)
+		{
+			right_is_null = true;
+		}
+
 		if (*stats_pred_cmp_type == CStatsPred::EstatscmptEq)
 		{
 			(*col_ref_left) = CUtils::PcrExtractFromScExpression(expr_left);
@@ -1102,9 +1119,11 @@ CStatsPredUtils::ExtractJoinStatsFromJoinPred
 
 	const CColRef *col_ref_left = NULL;
 	const CColRef *col_ref_right = NULL;
+	BOOL left_is_null = false;
+	BOOL right_is_null = false;
 	CStatsPred::EStatsCmpType stats_cmp_type = CStatsPred::EstatscmptOther;
 
-	BOOL fSupportedScIdentComparison = IsPredCmpColsOrIgnoreCast(join_pred_expr, &col_ref_left, &stats_cmp_type, &col_ref_right);
+	BOOL fSupportedScIdentComparison = IsPredCmpColsOrIgnoreCast(join_pred_expr, &col_ref_left, &stats_cmp_type, &col_ref_right, left_is_null, right_is_null);
 	if (fSupportedScIdentComparison && CStatsPred::EstatscmptOther != stats_cmp_type)
 	{
 		if (!IMDType::StatsAreComparable(col_ref_left->RetrieveType(), col_ref_right->RetrieveType()))
@@ -1123,10 +1142,10 @@ CStatsPredUtils::ExtractJoinStatsFromJoinPred
 		{
 			if (index_left < index_right)
 			{
-				return GPOS_NEW(mp) CStatsPredJoin(col_ref_left->Id(), stats_cmp_type, col_ref_right->Id());
+				return GPOS_NEW(mp) CStatsPredJoin(col_ref_left->Id(), stats_cmp_type, col_ref_right->Id(), left_is_null, right_is_null);
 			}
 
-			return GPOS_NEW(mp) CStatsPredJoin(col_ref_right->Id(), stats_cmp_type, col_ref_left->Id());
+			return GPOS_NEW(mp) CStatsPredJoin(col_ref_right->Id(), stats_cmp_type, col_ref_left->Id(), right_is_null, left_is_null);
 		}
 	}
 

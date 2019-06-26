@@ -159,7 +159,9 @@ namespace gpopt
 				CExpression *expr,
 				const CColRef **col_ref1,
 				CStatsPred::EStatsCmpType *stats_pred_cmp_type,
-				const CColRef **col_ref2
+				const CColRef **col_ref2,
+				BOOL &left_is_null,
+				BOOL &right_is_null
 				);
 
 		public:

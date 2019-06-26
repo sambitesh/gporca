@@ -294,33 +294,79 @@ CJoinStatsProcessor::SetResultingJoinStats
 		GPOS_ASSERT(NULL != outer_histogram);
 		GPOS_ASSERT(NULL != inner_histogram);
 		BOOL is_input_empty = CStatistics::IsEmptyJoin(outer_stats, inner_side_stats, IsLASJ);
-
 		CDouble local_scale_factor(1.0);
 		CHistogram *outer_histogram_after = NULL;
 		CHistogram *inner_histogram_after = NULL;
-		JoinHistograms
+
+		// When we have any form of equi join with join condition of type f(a)=b,
+		// we calculate the NDV of such a join as NDV(b).
+		if (pred_info->No_stats_on_outer() || pred_info->No_stats_on_inner())
+		{
+			if(pred_info->No_stats_on_inner())
+			{
+				JoinHistograms
 				(
-						mp,
-						outer_histogram,
-						inner_histogram,
-						pred_info,
-						outer_stats->Rows(),
-						inner_side_stats->Rows(),
-						&outer_histogram_after,
-						&inner_histogram_after,
-						&local_scale_factor,
-						is_input_empty,
-						join_type,
-						DoIgnoreLASJHistComputation
+				 mp,
+				 outer_histogram,
+				 outer_histogram,
+				 pred_info,
+				 outer_stats->Rows(),
+				 inner_side_stats->Rows(),
+				 &outer_histogram_after,
+				 &inner_histogram_after,
+				 &local_scale_factor,
+				 is_input_empty,
+				 join_type,
+				 DoIgnoreLASJHistComputation
 				);
+			}
+			else
+			{
+				JoinHistograms
+				(
+				 mp,
+				 inner_histogram,
+				 inner_histogram,
+				 pred_info,
+				 outer_stats->Rows(),
+				 inner_side_stats->Rows(),
+				 &outer_histogram_after,
+				 &inner_histogram_after,
+				 &local_scale_factor,
+				 is_input_empty,
+				 join_type,
+				 DoIgnoreLASJHistComputation
+				);
+			}
+		}
+		else
+		{
+			JoinHistograms
+					(
+							mp,
+							outer_histogram,
+							inner_histogram,
+							pred_info,
+							outer_stats->Rows(),
+							inner_side_stats->Rows(),
+							&outer_histogram_after,
+							&inner_histogram_after,
+							&local_scale_factor,
+							is_input_empty,
+							join_type,
+							DoIgnoreLASJHistComputation
+					);
+
+		}
 
 		output_is_empty = JoinStatsAreEmpty(outer_stats->IsEmpty(), output_is_empty, outer_histogram, inner_histogram, outer_histogram_after, join_type);
-
+		
 		CStatisticsUtils::AddHistogram(mp, colid1, outer_histogram_after, result_col_hist_mapping);
 		if (!semi_join)
 		{
 			CStatisticsUtils::AddHistogram(mp, colid2, inner_histogram_after, result_col_hist_mapping);
 		}
+
 		GPOS_DELETE(outer_histogram_after);
 		GPOS_DELETE(inner_histogram_after);
 
