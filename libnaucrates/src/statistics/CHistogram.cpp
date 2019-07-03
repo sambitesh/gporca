@@ -654,7 +654,7 @@ CHistogram::MakeJoinHistogramNormalize
 {
 	GPOS_ASSERT(NULL != other_histogram);
 
-	if (CStatsPred::EstatscmptEqNDV == stats_cmp_type)
+	if (CStatisticsUtils::IsStatsCmpTypeNdvEq(stats_cmp_type))
 	{
 		*scale_factor = std::max
 								 (

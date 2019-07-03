@@ -48,10 +48,6 @@ namespace gpnaucrates
 			// column id
 			ULONG m_colidInner;
 
-			BOOL m_no_stats_on_outer;
-
-			BOOL m_no_stats_on_inner;
-
 		public:
 
 			// c'tor
@@ -66,41 +62,15 @@ namespace gpnaucrates
 				m_stats_cmp_type(stats_cmp_type),
 				m_colidInner(colid2)
 			{
-				m_no_stats_on_outer = false;
-				m_no_stats_on_inner = false;
 			}
 
-			CStatsPredJoin
-			(
-			 ULONG colid1,
-			 CStatsPred::EStatsCmpType stats_cmp_type,
-			 ULONG colid2,
-			 BOOL no_stats_on_outer,
-			 BOOL no_stats_on_inner
-			 )
-			:
-			m_colidOuter(colid1),
-			m_stats_cmp_type(stats_cmp_type),
-			m_colidInner(colid2),
-			m_no_stats_on_outer(no_stats_on_outer),
-			m_no_stats_on_inner(no_stats_on_inner)
-			{}
 			// accessors
 			ULONG ColIdOuter() const
 			{
 				return m_colidOuter;
 			}
 
-			BOOL No_stats_on_inner() const
-			{
-				return m_no_stats_on_inner;
-			}
-
-			BOOL No_stats_on_outer() const
-			{
-				return m_no_stats_on_outer;
-			}
-				// comparison type
+			// comparison type
 			CStatsPred::EStatsCmpType GetCmpType() const
 			{
 				return m_stats_cmp_type;
