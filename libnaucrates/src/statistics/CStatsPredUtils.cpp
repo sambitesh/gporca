@@ -388,13 +388,19 @@ CStatsPredUtils::IsPredCmpColsOrIgnoreCast
 	(*col_ref_left) = CCastUtils::PcrExtractFromScIdOrCastScId(expr_left);
 	(*col_ref_right) = CCastUtils::PcrExtractFromScIdOrCastScId(expr_right);
 
-	// if the equi join is of type f(a) = f(b) then it is unsupported stats comparison
-	// (from Selinger et al.)
 	if (NULL == *col_ref_left && NULL == *col_ref_right)
 		return false;
 
 	if (NULL == *col_ref_left || NULL == *col_ref_right)
 	{
+		// if the scalar cmp is of equality type, we may not have been able to extract
+		// the column referenes of scalar ident if they had any other expression than cast
+		// on top of them.
+		// in such cases, check if there is still a possibility to extract scalar ident,
+		// if there is more than one column reference on either side, this is unsupported
+		// If supported, mark the comparison as NDV-based
+
+
 		if (NULL == *col_ref_left)
 		{
 			left_is_null = true;
@@ -405,13 +411,6 @@ CStatsPredUtils::IsPredCmpColsOrIgnoreCast
 			right_is_null = true;
 		}
 
-		// if the scalar cmp is of equality type, we may not have been able to extract
-		// the column referenes of scalar ident if they had any other expression than cast
-		// on top of them.
-		// in such cases, check if there is still a possibility to extract scalar ident,
-		// if there is more than one column reference on either side, this is unsupported
-		// If supported, mark the comparison as NDV-based
-
 		if (*stats_pred_cmp_type == CStatsPred::EstatscmptEq)
 		{
 			(*col_ref_left) = CUtils::PcrExtractFromScExpression(expr_left);
@@ -421,7 +420,7 @@ CStatsPredUtils::IsPredCmpColsOrIgnoreCast
 			{
 				return false;
 			}
-
+			(*stats_pred_cmp_type) = CStatsPred::EstatscmptEqNDV;
 			return true;
 		}
 		// failed to extract a scalar ident
@@ -1088,28 +1087,7 @@ CStatsPredUtils::GetStatsPredFromBoolExpr
 	return GPOS_NEW(mp) CStatsPredPoint(colid, CStatsPred::EstatscmptEq, GPOS_NEW(mp) CPoint(datum));
 }
 
-CStatsPred::EStatsCmpType
-CStatsPredUtils::DeriveStatCmpEqNDVType
-		(
-		 ULONG left_index,
-		 ULONG right_index,
-		 BOOL left_is_null,
-		 BOOL right_is_null
-		 )
-{
-	GPOS_ASSERT(left_is_null || right_is_null);
 
-	// given an equi join condition f(a) = b, if the func is on
-	// outer side, consider the NDV stats on inner
-	if ((left_is_null && (left_index < right_index)) ||
-		(right_is_null && (right_index < left_index)))
-	{
-		return CStatsPred::EstatscmptEqNDVInner;
-	}
-
-	// otherwise consider NDV stats on outer
-	return CStatsPred::EstatscmptEqNDVOuter;
-}
 //---------------------------------------------------------------------------
 //	@function:
 //		CStatsPredUtils::ExtractJoinStatsFromJoinPred
@@ -1159,20 +1137,15 @@ CStatsPredUtils::ExtractJoinStatsFromJoinPred
 		ULONG index_left = CUtils::UlPcrIndexContainingSet(output_col_refsets, col_ref_left);
 		ULONG index_right = CUtils::UlPcrIndexContainingSet(output_col_refsets, col_ref_right);
 
-		if (left_is_null || right_is_null)
-		{
-			stats_cmp_type = DeriveStatCmpEqNDVType(index_left, index_right, left_is_null, right_is_null);
-		}
-
 		if (gpos::ulong_max != index_left && gpos::ulong_max != index_right &&
 			index_left != index_right)
 		{
 			if (index_left < index_right)
 			{
-				return GPOS_NEW(mp) CStatsPredJoin(col_ref_left->Id(), stats_cmp_type, col_ref_right->Id());
+				return GPOS_NEW(mp) CStatsPredJoin(col_ref_left->Id(), stats_cmp_type, col_ref_right->Id(), left_is_null, right_is_null);
 			}
 
-			return GPOS_NEW(mp) CStatsPredJoin(col_ref_right->Id(), stats_cmp_type, col_ref_left->Id());
+			return GPOS_NEW(mp) CStatsPredJoin(col_ref_right->Id(), stats_cmp_type, col_ref_left->Id(), right_is_null, left_is_null);
 		}
 	}
 

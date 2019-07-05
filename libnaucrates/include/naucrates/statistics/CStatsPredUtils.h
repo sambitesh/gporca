@@ -140,10 +140,6 @@ namespace gpopt
 			static
 			CStatsPred::EStatsCmpType GetStatsCmpType(IMDId *mdid);
 
-			// derive whether it is EstatscmptEqNDVInner or EstatscmptEqNDVOuter
-			static
-			CStatsPred::EStatsCmpType DeriveStatCmpEqNDVType ( ULONG left_index, ULONG right_index, BOOL left_is_null, BOOL right_is_null);
-
 			// helper function to extract statistics join filter from a given join predicate
 			static
 			CStatsPredJoin *ExtractJoinStatsFromJoinPred

@@ -102,7 +102,7 @@ CJoinStatsProcessor::JoinHistograms
 				scale_factor
 				);
 
-		if (CStatsPred::EstatscmptEq == stats_cmp_type || CStatsPred::EstatscmptINDF == stats_cmp_type || CStatisticsUtils::IsStatsCmpTypeNdvEq(stats_cmp_type))
+		if (CStatsPred::EstatscmptEq == stats_cmp_type || CStatsPred::EstatscmptINDF == stats_cmp_type || CStatsPred::EstatscmptEqNDV == stats_cmp_type)
 		{
 			if (histogram1->WereNDVsScaled())
 			{
@@ -284,7 +284,6 @@ CJoinStatsProcessor::SetResultingJoinStats
 	for (ULONG i = 0; i < num_join_conds; i++)
 	{
 		CStatsPredJoin *pred_info = (*join_pred_stats_info)[i];
-		CStatsPred::EStatsCmpType stats_cmp_type = pred_info->GetCmpType();
 		ULONG colid1 = pred_info->ColIdOuter();
 		ULONG colid2 = pred_info->ColIdInner();
 		GPOS_ASSERT(colid1 != colid2);
@@ -300,60 +299,64 @@ CJoinStatsProcessor::SetResultingJoinStats
 		CHistogram *inner_histogram_after = NULL;
 
 		// When we have any form of equi join with join condition of type f(a)=b,
-		// we calculate the NDV of such a join as NDV(b) ( from Selinger et al.)
-		if (CStatsPred::EstatscmptEqNDVOuter == stats_cmp_type)
+		// we calculate the NDV of such a join as NDV(b).
+		if (pred_info->No_stats_on_outer() || pred_info->No_stats_on_inner())
 		{
-			JoinHistograms
-			(
-			 mp,
-			 outer_histogram,
-			 outer_histogram,
-			 pred_info,
-			 outer_stats->Rows(),
-			 inner_side_stats->Rows(),
-			 &outer_histogram_after,
-			 &inner_histogram_after,
-			 &local_scale_factor,
-			 is_input_empty,
-			 join_type,
-			 DoIgnoreLASJHistComputation
-			);
-		}
-		else if (CStatsPred::EstatscmptEqNDVInner == stats_cmp_type)
-		{
-			JoinHistograms
-			(
-			 mp,
-			 inner_histogram,
-			 inner_histogram,
-			 pred_info,
-			 outer_stats->Rows(),
-			 inner_side_stats->Rows(),
-			 &outer_histogram_after,
-			 &inner_histogram_after,
-			 &local_scale_factor,
-			 is_input_empty,
-			 join_type,
-			 DoIgnoreLASJHistComputation
-			);
+			if(pred_info->No_stats_on_inner())
+			{
+				JoinHistograms
+				(
+				 mp,
+				 outer_histogram,
+				 outer_histogram,
+				 pred_info,
+				 outer_stats->Rows(),
+				 inner_side_stats->Rows(),
+				 &outer_histogram_after,
+				 &inner_histogram_after,
+				 &local_scale_factor,
+				 is_input_empty,
+				 join_type,
+				 DoIgnoreLASJHistComputation
+				);
+			}
+			else
+			{
+				JoinHistograms
+				(
+				 mp,
+				 inner_histogram,
+				 inner_histogram,
+				 pred_info,
+				 outer_stats->Rows(),
+				 inner_side_stats->Rows(),
+				 &outer_histogram_after,
+				 &inner_histogram_after,
+				 &local_scale_factor,
+				 is_input_empty,
+				 join_type,
+				 DoIgnoreLASJHistComputation
+				);
+			}
 		}
 		else
 		{
 			JoinHistograms
-			(
-			mp,
-			outer_histogram,
-			inner_histogram,
-			pred_info,
-			outer_stats->Rows(),
-			inner_side_stats->Rows(),
-			&outer_histogram_after,
-			&inner_histogram_after,
-			&local_scale_factor,
-			is_input_empty,
-			join_type,
-			DoIgnoreLASJHistComputation
-			);
+					(
+							mp,
+							outer_histogram,
+							inner_histogram,
+							pred_info,
+							outer_stats->Rows(),
+							inner_side_stats->Rows(),
+							&outer_histogram_after,
+							&inner_histogram_after,
+							&local_scale_factor,
+							is_input_empty,
+							join_type,
+							DoIgnoreLASJHistComputation
+					);
+
 		}
 
 		output_is_empty = JoinStatsAreEmpty(outer_stats->IsEmpty(), output_is_empty, outer_histogram, inner_histogram, outer_histogram_after, join_type);

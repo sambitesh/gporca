@@ -427,12 +427,6 @@ namespace gpnaucrates
 				CStatistics::ECardBoundingMethod card_bounding_method // technique used to estimate max source cardinality in the output stats object
 				);
 
-			static
-			BOOL IsStatsCmpTypeNdvEq
-				 (
-				  CStatsPred::EStatsCmpType stats_cmp_type
-				  );
-
 	}; // class CStatisticsUtils
 
 	// comparison function for sorting MCVs
