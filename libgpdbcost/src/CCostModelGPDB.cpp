@@ -1306,23 +1306,40 @@ CCostModelGPDB::CostMotion
 		recvCost
 	));
 
-
-	if(COperator::EopPhysicalMotionBroadcast == op_id)
+	if(COperator::EopPhysicalMotionHashDistribute == op_id)
 	{
-		COptimizerConfig *optimizer_config = COptCtxt::PoctxtFromTLS()->GetOptimizerConfig();
-		ULONG broadcast_threshold = optimizer_config->GetHint()->UlBroadcastThreshold();
-
-		if(num_rows_outer > broadcast_threshold)
+		CPhysicalMotion *motion = CPhysicalMotion::PopConvert(exprhdl.Pop());
+		CColRefSet *columns = motion->Pds()->PcrsUsed(mp);
+		CColRefArray *columns_array = columns->Pdrgpcr(mp);
+		COperator *popChild = exprhdl.Pop(0);
+		BOOL fJoin = false;
+		if(popChild)
 		{
-			DOUBLE ulPenalizationFactor = 100000000000000.0;
-			costLocal = CCost(ulPenalizationFactor);
+			fJoin = CUtils::FPhysicalJoin(popChild);
 		}
+		CDouble ndv = 1;
+		for (ULONG i = 0; i < columns_array->Size(); ++i)
+		{
+			CColRef *col = (*columns_array)[i];
+			ndv = ndv * pci->Pcstats()->GetNDVs(col);
+		}
+
+		if (ndv < pcmgpdb->UlHosts() && (ndv >= 1) && fJoin)
+		{
+
+			costLocal = costLocal * CCost(4.5);
+		}
+
+		columns->Release();
+		columns_array->Release();
 	}
 
 
-	CCost costChild = CostChildren(mp, exprhdl, pci, pcmgpdb->GetCostModelParams());
 
-	return costLocal + costChild;
+
+	CCost costChild = CostChildren(mp, exprhdl, pci, pcmgpdb->GetCostModelParams());
+	CCost totalCost = (costLocal + costChild) ;
+	return totalCost;
 }
 
 
