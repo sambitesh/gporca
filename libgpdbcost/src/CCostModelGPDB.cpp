@@ -1334,6 +1334,17 @@ CCostModelGPDB::CostMotion
 		columns_array->Release();
 	}
 
+	if(COperator::EopPhysicalMotionBroadcast == op_id)
+	{
+		COptimizerConfig *optimizer_config = COptCtxt::PoctxtFromTLS()->GetOptimizerConfig();
+		ULONG broadcast_threshold = optimizer_config->GetHint()->UlBroadcastThreshold();
+		
+		if(num_rows_outer > broadcast_threshold)
+		{
+			DOUBLE ulPenalizationFactor = 100000000000000.0;
+			costLocal = CCost(ulPenalizationFactor);
+		}
+	}
 
 
 
