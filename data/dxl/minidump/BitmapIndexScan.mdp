@@ -437,7 +437,7 @@ see sql/BitmapIndexScan.sql
         </dxl:ProjList>
         <dxl:Filter/>
         <dxl:SortingColumnList/>
-        <dxl:NestedLoopJoin JoinType="Inner" IndexNestedLoopJoin="true" OuterRefAsParam="false">
+        <dxl:NestedLoopJoin JoinType="Inner" IndexNestedLoopJoin="false" OuterRefAsParam="false">
           <dxl:Properties>
             <dxl:Cost StartupCost="0" TotalCost="5184.782402" Rows="1.000000" Width="9"/>
           </dxl:Properties>
@@ -448,7 +448,10 @@ see sql/BitmapIndexScan.sql
           </dxl:ProjList>
           <dxl:Filter/>
           <dxl:JoinFilter>
-            <dxl:ConstValue TypeMdid="0.16.1.0" IsNull="false" IsByValue="true" Value="true"/>
+            <dxl:Comparison ComparisonOperator="=" OperatorMdid="0.1752.1.0">
+              <dxl:Ident ColId="23" ColName="fid" TypeMdid="0.1700.1.0"/>
+              <dxl:Ident ColId="0" ColName="flex_value_set_id" TypeMdid="0.1700.1.0"/>
+            </dxl:Comparison>
           </dxl:JoinFilter>
           <dxl:BroadcastMotion InputSegments="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63" OutputSegments="0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63">
             <dxl:Properties>
@@ -466,11 +469,8 @@ see sql/BitmapIndexScan.sql
                 <dxl:Cost StartupCost="0" TotalCost="434.195292" Rows="1.000000" Width="9"/>
               </dxl:Properties>
               <dxl:ProjList>
-                <dxl:ProjElem ColId="6" Alias="flex_value_id">
-                  <dxl:Ident ColId="6" ColName="flex_value_id" TypeMdid="0.1700.1.0"/>
-                </dxl:ProjElem>
-                <dxl:ProjElem ColId="23" Alias="fid">
-                  <dxl:Ident ColId="23" ColName="fid" TypeMdid="0.1700.1.0"/>
+                <dxl:ProjElem ColId="0" Alias="flex_value_set_id">
+                  <dxl:Ident ColId="0" ColName="flex_value_set_id" TypeMdid="0.1700.1.0"/>
                 </dxl:ProjElem>
               </dxl:ProjList>
               <dxl:Filter/>
@@ -493,8 +493,8 @@ see sql/BitmapIndexScan.sql
                     <dxl:Cost StartupCost="0" TotalCost="431.000578" Rows="1.000000" Width="9"/>
                   </dxl:Properties>
                   <dxl:ProjList>
-                    <dxl:ProjElem ColId="23" Alias="fid">
-                      <dxl:Ident ColId="23" ColName="fid" TypeMdid="0.1700.1.0"/>
+                    <dxl:ProjElem ColId="6" Alias="flex_value_id">
+                      <dxl:Ident ColId="6" ColName="flex_value_id" TypeMdid="0.1700.1.0"/>
                     </dxl:ProjElem>
                   </dxl:ProjList>
                   <dxl:Filter>
