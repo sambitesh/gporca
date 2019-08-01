@@ -9,6 +9,7 @@
 //		Implementation of GPDB cost model
 //---------------------------------------------------------------------------
 
+#include "gpopt/base/CColRefSetIter.h"
 #include "gpopt/base/COrderSpec.h"
 #include "gpopt/base/CWindowFrame.h"
 #include "gpopt/metadata/CTableDescriptor.h"
@@ -978,7 +979,45 @@ CCostModelGPDB::CostHashJoin
 	}
 	CCost costChild = CostChildren(mp, exprhdl, pci, pcmgpdb->GetCostModelParams());
 
-	return costChild + costLocal;
+	CDouble skew_ratio = 1;
+	ULONG arity = exprhdl.Arity();
+	
+	// Hasjoin with skewed HashRedistribute below them are expensive
+	// find out if there is a skewed redistribute child of this HashJoin.
+	for (ULONG ul = 0; ul < arity - 1; ++ul)
+	{
+		COperator *popChild = exprhdl.Pop(ul);
+		if (NULL == popChild || COperator::EopPhysicalMotionHashDistribute != popChild->Eopid())
+		{
+			continue;
+		}
+
+		CPhysicalMotion *motion = CPhysicalMotion::PopConvert(popChild);
+		CColRefSet *columns = motion->Pds()->PcrsUsed(mp);
+
+		// we decide if there is a skew by calculating the NDVs of the HashRedistribute
+		CDouble ndv = 1.0;
+		CColRefSetIter iter(*columns);
+		while (iter.Advance())
+		{
+			CColRef *colref = iter.Pcr();
+			ndv = ndv * pci->Pcstats(ul)->GetNDVs(colref);
+		}
+
+		// if the NDVs are less than number of segments then there is definitely
+		// a skew. NDV < 1 implies no stats exist for the columns involved. So we don't
+		// want to take any decision.
+		// In case of a skew, penalize the local cost of HashJoin with a
+		// skew ratio = (num of segments)/ndv
+		if (ndv < pcmgpdb->UlHosts() && (ndv >= 1))
+		{
+			CDouble sk = pcmgpdb->UlHosts() / ndv;
+			skew_ratio =  (sk > 1) ? sk : 1;
+		}
+
+		columns->Release();
+	}
+	return costChild + CCost(costLocal.Get() * skew_ratio);
 }
 
 //---------------------------------------------------------------------------
