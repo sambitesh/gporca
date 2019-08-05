@@ -1012,11 +1012,13 @@ CCostModelGPDB::CostHashJoin
 		if (ndv < pcmgpdb->UlHosts() && (ndv >= 1))
 		{
 			CDouble sk = pcmgpdb->UlHosts() / ndv;
-			skew_ratio =  (sk > 1) ? sk : 1;
+			skew_ratio =  CDouble(std::max(sk.Get(),skew_ratio.Get()));
 		}
 
 		columns->Release();
 	}
+
+	skew_ratio =  CDouble(std::min(10.0,skew_ratio.Get()));
 	return costChild + CCost(costLocal.Get() * skew_ratio);
 }
 
