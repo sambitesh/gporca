@@ -253,9 +253,9 @@ CCostModelGPDB::CostUnary
 	// Limit (global)
 	//   Gather
 	//		Limit (local) <-- this is costed 0
-	if(plimit && !plimit->FGlobal())
+	if(plimit)
 	{
-		return costChild;
+		costChild = CCost(costChild * pcp->PcpLookup(CCostModelParamsGPDB::EcpLocalLimitReward)->Get());
 	}
 
 	return costLocal + costChild;
@@ -1320,7 +1320,6 @@ CCostModelGPDB::CostMotion
 	CDouble dSendCostUnit(0);
 	CDouble dRecvCostUnit(0);
 	CDouble recvCost(0);
-	CDouble localLimitReward = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpLocalLimitReward)->Get();
 
 	CCost costLocal(0);
 	if (COperator::EopPhysicalMotionBroadcast == op_id)
@@ -1378,28 +1377,6 @@ CCostModelGPDB::CostMotion
 			DOUBLE ulPenalizationFactor = 100000000000000.0;
 			costLocal = CCost(ulPenalizationFactor);
 		}
-	}
-
-	if (COperator::EopPhysicalMotionGather == op_id)
-	{
-		// We always want to have a local limit under Gather motion if it is available.
-		// e.g.
-		// Limit (global)
-		//   Gather
-		//		Limit (local)
-		//
-		// We cost it less than the case when there is no local limit
-		// e.g.
-		// Limit
-		//	 Gather
-		//		<Expression tree>
-
-		COperator *popChild = exprhdl.Pop(0);
-		if (NULL != popChild && COperator::EopPhysicalLimit == popChild->Eopid())
-		{
-			costLocal = CCost(costLocal.Get() * localLimitReward);
-		}
-		
 	}
 
 	CCost costChild = CostChildren(mp, exprhdl, pci, pcmgpdb->GetCostModelParams());

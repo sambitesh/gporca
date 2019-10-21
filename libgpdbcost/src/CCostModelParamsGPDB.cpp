@@ -171,7 +171,7 @@ const CDouble CCostModelParamsGPDB::DBitmapScanRebindCost(0.06);
 // see CCostModelGPDB::CostHashJoin() for why this is needed
 const CDouble CCostModelParamsGPDB::DPenalizeHJSkewUpperLimit(10.0);
 
-// see CCostModelGPDB::CostMotion() for why is it needed
+// see CCostModelGPDB::CostUnary() for why is it needed
 const CDouble CCostModelParamsGPDB::DLocalLimitReward(0.99);
 
 #define GPOPT_COSTPARAM_NAME_MAX_LENGTH		80

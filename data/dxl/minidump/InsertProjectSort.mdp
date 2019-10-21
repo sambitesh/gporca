@@ -296,7 +296,7 @@ explain insert into tbl_cds_buysell_orders_new (a,b,c)
     <dxl:Plan Id="0" SpaceSize="5">
       <dxl:DMLInsert Columns="0,1,2,10,11,12,13" ActionCol="14" OidCol="0" CtidCol="0" SegmentIdCol="0" InputSorted="false">
         <dxl:Properties>
-          <dxl:Cost StartupCost="0" TotalCost="42556.094359" Rows="1000000.000000" Width="12"/>
+          <dxl:Cost StartupCost="0" TotalCost="42547.346749" Rows="1000000.000000" Width="12"/>
         </dxl:Properties>
         <dxl:DirectDispatchInfo/>
         <dxl:ProjList>
@@ -338,7 +338,7 @@ explain insert into tbl_cds_buysell_orders_new (a,b,c)
         </dxl:TableDescriptor>
         <dxl:Result>
           <dxl:Properties>
-            <dxl:Cost StartupCost="0" TotalCost="889.427692" Rows="1000000.000000" Width="32"/>
+            <dxl:Cost StartupCost="0" TotalCost="880.680082" Rows="1000000.000000" Width="32"/>
           </dxl:Properties>
           <dxl:ProjList>
             <dxl:ProjElem ColId="0" Alias="a">
@@ -351,16 +351,16 @@ explain insert into tbl_cds_buysell_orders_new (a,b,c)
               <dxl:Ident ColId="2" ColName="c" TypeMdid="0.23.1.0"/>
             </dxl:ProjElem>
             <dxl:ProjElem ColId="10" Alias="d">
-              <dxl:ConstValue TypeMdid="0.23.1.0" IsNull="true" IsByValue="true"/>
+              <dxl:ConstValue TypeMdid="0.23.1.0" IsNull="true"/>
             </dxl:ProjElem>
             <dxl:ProjElem ColId="11" Alias="e">
-              <dxl:ConstValue TypeMdid="0.23.1.0" IsNull="true" IsByValue="true"/>
+              <dxl:ConstValue TypeMdid="0.23.1.0" IsNull="true"/>
             </dxl:ProjElem>
             <dxl:ProjElem ColId="12" Alias="f">
-              <dxl:ConstValue TypeMdid="0.23.1.0" IsNull="true" IsByValue="true"/>
+              <dxl:ConstValue TypeMdid="0.23.1.0" IsNull="true"/>
             </dxl:ProjElem>
             <dxl:ProjElem ColId="13" Alias="g">
-              <dxl:ConstValue TypeMdid="0.23.1.0" IsNull="true" IsByValue="true"/>
+              <dxl:ConstValue TypeMdid="0.23.1.0" IsNull="true"/>
             </dxl:ProjElem>
             <dxl:ProjElem ColId="14" Alias="ColRef_0014">
               <dxl:ConstValue TypeMdid="0.23.1.0" Value="1"/>

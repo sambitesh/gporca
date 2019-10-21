@@ -633,7 +633,7 @@
     <dxl:Plan Id="0" SpaceSize="2">
       <dxl:PhysicalCTAS Name="fake ctas rel" IsTemporary="true" HasOids="false" StorageType="Heap" DistributionPolicy="Random" InsertColumns="0,1" VarTypeModList="-1,-1">
         <dxl:Properties>
-          <dxl:Cost StartupCost="0" TotalCost="1994.170857" Rows="99570.000000" Width="8"/>
+          <dxl:Cost StartupCost="0" TotalCost="1985.833190" Rows="99570.000000" Width="8"/>
         </dxl:Properties>
         <dxl:Columns>
           <dxl:Column ColId="10" Attno="1" ColName="a" TypeMdid="0.23.1.0"/>
@@ -650,7 +650,7 @@
         </dxl:ProjList>
         <dxl:Result>
           <dxl:Properties>
-            <dxl:Cost StartupCost="0" TotalCost="438.389607" Rows="99570.000000" Width="12"/>
+            <dxl:Cost StartupCost="0" TotalCost="430.051940" Rows="99570.000000" Width="12"/>
           </dxl:Properties>
           <dxl:ProjList>
             <dxl:ProjElem ColId="0" Alias="a">
@@ -667,7 +667,7 @@
           <dxl:OneTimeFilter/>
           <dxl:RandomMotion InputSegments="0" OutputSegments="0,1,2">
             <dxl:Properties>
-              <dxl:Cost StartupCost="0" TotalCost="437.991327" Rows="99570.000000" Width="8"/>
+              <dxl:Cost StartupCost="0" TotalCost="429.653660" Rows="99570.000000" Width="8"/>
             </dxl:Properties>
             <dxl:ProjList>
               <dxl:ProjElem ColId="0" Alias="a">
@@ -681,7 +681,7 @@
             <dxl:SortingColumnList/>
             <dxl:Limit>
               <dxl:Properties>
-                <dxl:Cost StartupCost="0" TotalCost="435.922927" Rows="99570.000000" Width="8"/>
+                <dxl:Cost StartupCost="0" TotalCost="427.585259" Rows="99570.000000" Width="8"/>
               </dxl:Properties>
               <dxl:ProjList>
                 <dxl:ProjElem ColId="0" Alias="a">
@@ -693,7 +693,7 @@
               </dxl:ProjList>
               <dxl:GatherMotion InputSegments="0,1,2" OutputSegments="0">
                 <dxl:Properties>
-                  <dxl:Cost StartupCost="0" TotalCost="435.126367" Rows="99570.000000" Width="8"/>
+                  <dxl:Cost StartupCost="0" TotalCost="431.099696" Rows="99570.000000" Width="8"/>
                 </dxl:Properties>
                 <dxl:ProjList>
                   <dxl:ProjElem ColId="0" Alias="a">
@@ -707,7 +707,7 @@
                 <dxl:SortingColumnList/>
                 <dxl:Limit>
                   <dxl:Properties>
-                    <dxl:Cost StartupCost="0" TotalCost="432.187538" Rows="99570.000000" Width="8"/>
+                    <dxl:Cost StartupCost="0" TotalCost="428.131183" Rows="99570.000000" Width="8"/>
                   </dxl:Properties>
                   <dxl:ProjList>
                     <dxl:ProjElem ColId="0" Alias="a">

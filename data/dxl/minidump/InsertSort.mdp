@@ -360,7 +360,7 @@ explain insert into nim1 select * from nim order by 1;
     <dxl:Plan Id="0" SpaceSize="2">
       <dxl:DMLInsert Columns="0" ActionCol="8" OidCol="0" CtidCol="0" SegmentIdCol="0" InputSorted="false">
         <dxl:Properties>
-          <dxl:Cost StartupCost="0" TotalCost="106371.615338" Rows="10000818.000000" Width="4"/>
+          <dxl:Cost StartupCost="0" TotalCost="106350.051092" Rows="10000818.000000" Width="4"/>
         </dxl:Properties>
         <dxl:DirectDispatchInfo/>
         <dxl:ProjList>
@@ -382,7 +382,7 @@ explain insert into nim1 select * from nim order by 1;
         </dxl:TableDescriptor>
         <dxl:Result>
           <dxl:Properties>
-            <dxl:Cost StartupCost="0" TotalCost="2196.427838" Rows="10000818.000000" Width="8"/>
+            <dxl:Cost StartupCost="0" TotalCost="2174.863592" Rows="10000818.000000" Width="8"/>
           </dxl:Properties>
           <dxl:ProjList>
             <dxl:ProjElem ColId="0" Alias="a">
