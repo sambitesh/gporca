@@ -243,19 +243,16 @@ CCostModelGPDB::CostUnary
 	DOUBLE rows = pci->Rows();
 	DOUBLE width = pci->Width();
 	DOUBLE num_rebinds = pci->NumRebinds();
-	CPhysicalLimit *plimit = dynamic_cast<CPhysicalLimit*>(exprhdl.Pop());
+	BOOL is_limit = (COperator::EopPhysicalLimit == exprhdl.Pop()->Eopid());
 	CCost costLocal = CCost(num_rebinds * CostTupleProcessing(rows, width, pcp).Get());
 	CCost costChild = CostChildren(mp, exprhdl, pci, pcp);
 
-	// if it is a local limit, then we cost it to 0. We always want to have a local
-	// limit if it is available.
-	// e.g.
-	// Limit (global)
-	//   Gather
-	//		Limit (local) <-- this is costed 0
-	if(plimit)
+	// we want to promote having a local limit. So pushing down limits
+	// should make the plan cheaper. Hence, in case of Limit operator,
+	// we reward the cost of child below it.
+	if(is_limit)
 	{
-		costChild = CCost(costChild * pcp->PcpLookup(CCostModelParamsGPDB::EcpLocalLimitReward)->Get());
+		costChild = CCost(costChild * pcp->PcpLookup(CCostModelParamsGPDB::EcpLimitReward)->Get());
 	}
 
 	return costLocal + costChild;
