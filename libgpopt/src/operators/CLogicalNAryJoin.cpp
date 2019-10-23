@@ -32,7 +32,20 @@ CLogicalNAryJoin::CLogicalNAryJoin
 	CMemoryPool *mp
 	)
 	:
-	CLogicalJoin(mp)
+	CLogicalJoin(mp),
+	m_lojChildIndexes(NULL)
+{
+	GPOS_ASSERT(NULL != mp);
+}
+
+CLogicalNAryJoin::CLogicalNAryJoin
+	(
+	CMemoryPool *mp,
+	ULongPtrArray *lojChildIndexes
+	)
+	:
+	CLogicalJoin(mp),
+	m_lojChildIndexes(lojChildIndexes)
 {
 	GPOS_ASSERT(NULL != mp);
 }

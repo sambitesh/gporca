@@ -31,16 +31,20 @@ namespace gpopt
 			// private copy ctor
 			CLogicalNAryJoin(const CLogicalNAryJoin &);
 
+			ULongPtrArray *m_lojChildIndexes;
+
 		public:
 
 			// ctor
 			explicit
 			CLogicalNAryJoin(CMemoryPool *mp);
 
+			CLogicalNAryJoin(CMemoryPool *mp, ULongPtrArray *lojChildIndexes);
+
 			// dtor
 			virtual
 			~CLogicalNAryJoin() 
-			{}
+			{ CRefCount::SafeRelease(m_lojChildIndexes); }
 
 			// ident accessors
 			virtual 
