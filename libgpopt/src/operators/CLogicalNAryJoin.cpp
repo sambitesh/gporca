@@ -97,6 +97,44 @@ CLogicalNAryJoin::PxfsCandidates
 	return xform_set;
 }
 
+//---------------------------------------------------------------------------
+//	@function:
+//		CLogicalNAryJoin::OsPrint
+//
+//	@doc:
+//		debug print
+//
+//---------------------------------------------------------------------------
+IOstream &
+CLogicalNAryJoin::OsPrint
+(
+ IOstream &os
+ )
+const
+{
+	os	<< SzId();
+
+	if (NULL != m_lojChildIndexes)
+	{
+		// print out the indexes of the logical children that correspond to
+		// the scalar child entries below the CScalarNAryJoinPredList
+		os << " [";
+		ULONG size = m_lojChildIndexes->Size();
+		for (ULONG ul=0; ul < size; ul++)
+		{
+			if (0 < ul)
+			{
+				os << ", ";
+			}
+			os << *((*m_lojChildIndexes)[ul]);
+		}
+		os	<< "]";
+	}
+
+	return os;
+}
+
+
 
 // EOF
 

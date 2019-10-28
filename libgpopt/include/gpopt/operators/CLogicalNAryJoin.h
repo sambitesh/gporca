@@ -145,6 +145,9 @@ namespace gpopt
 				return dynamic_cast<CLogicalNAryJoin*>(pop);
 			}
 
+			virtual
+			IOstream & OsPrint(IOstream &os) const;
+
 	}; // class CLogicalNAryJoin
 
 }
