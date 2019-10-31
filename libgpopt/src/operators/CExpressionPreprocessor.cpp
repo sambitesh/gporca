@@ -840,7 +840,7 @@ CExpressionPreprocessor::PexprCollapseJoins
 		CExpressionArray *lojPredicates = GPOS_NEW(mp) CExpressionArray(mp);
 
 		CollectJoinChildren(mp, pexpr, newChildNodes, lojChildIndexes, innerJoinPredicates, lojPredicates);
-		
+
 		if (lojPredicates->Size() > 0)
 		{
 			CExpressionArray *naryJoinPredicates = GPOS_NEW(mp) CExpressionArray(mp);
@@ -883,7 +883,6 @@ CExpressionPreprocessor::PexprCollapseJoins
 		}
 
 		return pexprNAryJoin;
-		
 	}
 	// current operator is not an inner-join or supported LOJ, recursively process children
 	CExpressionArray *pdrgpexprChildren = GPOS_NEW(mp) CExpressionArray(mp);
@@ -923,7 +922,6 @@ CExpressionPreprocessor::CollectJoinChildren
 
 		innerJoinPredicates->Append(PexprCollapseJoins(mp, pexprScalar));
 	}
-	
 	else if (GPOS_FTRACE(EopttraceEnableLOJInNAryJoin) &&
 			 CPredicateUtils::FLeftOuterJoin(pexpr))
 	{

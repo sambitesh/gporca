@@ -67,7 +67,21 @@ CLogicalNAryJoin::DeriveMaxCard
 	)
 	const
 {
-	return CLogical::Maxcard(exprhdl, exprhdl.Arity() - 1, MaxcardDef(exprhdl));
+	CMaxCard maxCard(1);
+	const ULONG arity = exprhdl.Arity();
+
+	// loop over the inner join logical children only
+	for (ULONG ul = 0; ul < arity - 1; ul++)
+	{
+		CMaxCard childMaxCard = exprhdl.DeriveMaxCard(ul);
+
+		if (IsInnerJoinChild(ul) || 1 <= childMaxCard.Ull())
+		{
+			maxCard *= childMaxCard;
+		}
+	}
+
+	return CLogical::Maxcard(exprhdl, exprhdl.Arity() - 1, maxCard);
 }
 
 //---------------------------------------------------------------------------

@@ -45,7 +45,7 @@ namespace gpopt
 		virtual
 		EOperatorId Eopid() const
 		{
-			return EopScalarProjectList;
+			return EopScalarNAryJoinPredList;
 		}
 
 		// return a string for operator name

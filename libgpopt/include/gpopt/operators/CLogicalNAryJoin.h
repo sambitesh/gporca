@@ -140,9 +140,20 @@ namespace gpopt
 				)
 			{
 				GPOS_ASSERT(NULL != pop);
-				GPOS_ASSERT(EopLogicalNAryJoin == pop->Eopid());
-				
+
 				return dynamic_cast<CLogicalNAryJoin*>(pop);
+			}
+
+			BOOL
+			HasOuterJoinChildren() const
+			{
+				return (NULL != m_lojChildIndexes);
+			}
+
+			BOOL
+			IsInnerJoinChild(ULONG child_num) const
+			{
+				return (NULL == m_lojChildIndexes || *((*m_lojChildIndexes)[child_num]) == 0);
 			}
 
 			virtual

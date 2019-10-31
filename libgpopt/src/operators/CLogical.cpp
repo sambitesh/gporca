@@ -670,8 +670,10 @@ CLogical::PpcDeriveConstraintFromPredicates
 		{
 			CExpression *pexprScalar = exprhdl.PexprScalarChild(ul);
 
-			// make sure it is a predicate... boolop, cmp, nulltest
-			if (NULL == pexprScalar || !CUtils::FPredicate(pexprScalar))
+			// make sure it is a predicate... boolop, cmp, nulltest,
+			// or a list of join predicates for an NAry join
+			if (NULL == pexprScalar ||
+				(!CUtils::FPredicate(pexprScalar) && CLogical::EopScalarNAryJoinPredList != pexprScalar->Pop()->Eopid()))
 			{
 				continue;
 			}
@@ -1118,13 +1120,22 @@ CLogical::Maxcard
 	// in case of a false condition (when the operator is not Full / Left Outer Join) or a contradiction, maxcard should be zero
 	CExpression *pexprScalar = exprhdl.PexprScalarChild(ulScalarIndex);
 
-	if (NULL != pexprScalar &&
-		( (CUtils::FScalarConstFalse(pexprScalar) &&
-				(COperator::EopLogicalFullOuterJoin != exprhdl.Pop()->Eopid() &&
-						COperator::EopLogicalLeftOuterJoin != exprhdl.Pop()->Eopid()))
-		|| exprhdl.DerivePropertyConstraint()->FContradiction()))
+	if (NULL != pexprScalar)
 	{
-		return CMaxCard(0 /*ull*/);
+		if (COperator::EopScalarNAryJoinPredList == pexprScalar->Pop()->Eopid())
+		{
+			// look at the inner join predicates only
+			pexprScalar = (*pexprScalar)[0];
+		}
+
+		if ((CUtils::FScalarConstFalse(pexprScalar) &&
+			 COperator::EopLogicalFullOuterJoin != exprhdl.Pop()->Eopid() &&
+			 COperator::EopLogicalLeftOuterJoin != exprhdl.Pop()->Eopid())
+			||
+			exprhdl.DerivePropertyConstraint()->FContradiction())
+		{
+			return CMaxCard(0 /*ull*/);
+		}
 	}
 
 	return maxcard;
