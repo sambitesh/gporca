@@ -33,7 +33,7 @@ CLogicalNAryJoin::CLogicalNAryJoin
 	)
 	:
 	CLogicalJoin(mp),
-	m_lojChildIndexes(NULL)
+	m_lojChildPredIndexes(NULL)
 {
 	GPOS_ASSERT(NULL != mp);
 }
@@ -45,7 +45,7 @@ CLogicalNAryJoin::CLogicalNAryJoin
 	)
 	:
 	CLogicalJoin(mp),
-	m_lojChildIndexes(lojChildIndexes)
+	m_lojChildPredIndexes(lojChildIndexes)
 {
 	GPOS_ASSERT(NULL != mp);
 }
@@ -128,19 +128,19 @@ const
 {
 	os	<< SzId();
 
-	if (NULL != m_lojChildIndexes)
+	if (NULL != m_lojChildPredIndexes)
 	{
 		// print out the indexes of the logical children that correspond to
 		// the scalar child entries below the CScalarNAryJoinPredList
 		os << " [";
-		ULONG size = m_lojChildIndexes->Size();
+		ULONG size = m_lojChildPredIndexes->Size();
 		for (ULONG ul=0; ul < size; ul++)
 		{
 			if (0 < ul)
 			{
 				os << ", ";
 			}
-			os << *((*m_lojChildIndexes)[ul]);
+			os << *((*m_lojChildPredIndexes)[ul]);
 		}
 		os	<< "]";
 	}

@@ -60,7 +60,7 @@ CLogicalLeftOuterJoin::DeriveMaxCard
 
 	// if the inner has a max card of 0, that will not make the LOJ's
 	// max card go to 0
-	if (1 <= maxCardInner.Ull())
+	if (0 < maxCardInner.Ull())
 	{
 		maxCard *= maxCardInner;
 	}

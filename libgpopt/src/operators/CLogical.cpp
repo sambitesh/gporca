@@ -672,8 +672,7 @@ CLogical::PpcDeriveConstraintFromPredicates
 
 			// make sure it is a predicate... boolop, cmp, nulltest,
 			// or a list of join predicates for an NAry join
-			if (NULL == pexprScalar ||
-				(!CUtils::FPredicate(pexprScalar) && CLogical::EopScalarNAryJoinPredList != pexprScalar->Pop()->Eopid()))
+			if (NULL == pexprScalar || !CUtils::FPredicate(pexprScalar))
 			{
 				continue;
 			}

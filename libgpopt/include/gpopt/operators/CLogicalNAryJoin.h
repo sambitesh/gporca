@@ -31,7 +31,18 @@ namespace gpopt
 			// private copy ctor
 			CLogicalNAryJoin(const CLogicalNAryJoin &);
 
-			ULongPtrArray *m_lojChildIndexes;
+			// Indexes that help to find ON predicates for LOJs.
+			// If all joins in this NAry join are inner joins, this pointer is NULL and
+			// the scalar child of this NAry join contains all join predicates directly.
+			// Otherwise, the scalar child is a CScalarNaryJoinPredList and this ULongPtr
+			// array has as many entries as there are logical children of the NAry
+			// join. For each logical child i, if that child i is part of an inner join
+			// or the outer table of an LOJ, then the corresponding entry
+			// (*m_lojChildPredIndexes)[i] in this array is 0 (GPOPT_ZERO_INNER_JOIN_PRED_INDEX).
+			// If the logical child is the right table of an LOJ, the corresponding
+			// index indicates the child index of the CScalarNAryJoinPredList
+			// expression that contains the ON predicate for the LOJ.
+			ULongPtrArray *m_lojChildPredIndexes;
 
 		public:
 
@@ -44,7 +55,9 @@ namespace gpopt
 			// dtor
 			virtual
 			~CLogicalNAryJoin() 
-			{ CRefCount::SafeRelease(m_lojChildIndexes); }
+			{
+				CRefCount::SafeRelease(m_lojChildPredIndexes);
+			}
 
 			// ident accessors
 			virtual 
@@ -147,13 +160,13 @@ namespace gpopt
 			BOOL
 			HasOuterJoinChildren() const
 			{
-				return (NULL != m_lojChildIndexes);
+				return (NULL != m_lojChildPredIndexes);
 			}
 
 			BOOL
 			IsInnerJoinChild(ULONG child_num) const
 			{
-				return (NULL == m_lojChildIndexes || *((*m_lojChildIndexes)[child_num]) == 0);
+				return (NULL == m_lojChildPredIndexes || *((*m_lojChildPredIndexes)[child_num]) == 0);
 			}
 
 			virtual

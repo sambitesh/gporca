@@ -127,15 +127,15 @@ namespace gpopt
 
 			// helper method for PexprCollapseJoins, collect children and make recursive calls
 			static
-			void CollectJoinChildren
-			(
-			 CMemoryPool *mp,
-			 CExpression *pexpr,
-			 CExpressionArray *logicalLeafNodes,
-			 ULongPtrArray *lojChildIndex,
-			 CExpressionArray *innerJoinPredicates,
-			 CExpressionArray *lojPredicates
-			 );
+			void CollectJoinChildrenRecursively
+				(
+				 CMemoryPool *mp,
+				 CExpression *pexpr,
+				 CExpressionArray *logicalLeafNodes,
+				 ULongPtrArray *lojChildPredIndexes,
+				 CExpressionArray *innerJoinPredicates,
+				 CExpressionArray *lojPredicates
+				);
 
 			// collapse cascaded logical project operators
 			static
