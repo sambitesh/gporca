@@ -470,6 +470,10 @@ CJoinOrderDPv2::DCost
 		dCost = dCost + (rgdRows[0] + rgdRows[1]);
 	}
 
+	if (CUtils::FCrossJoin(pexpr))
+	{
+		dCost = dCost * 100;
+	}
 	return dCost;
 }
 
