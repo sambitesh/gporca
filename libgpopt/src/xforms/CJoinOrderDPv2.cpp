@@ -170,6 +170,10 @@ CJoinOrderDPv2::DCost
 		dCost = dCost + rightChildGroup->m_best_expr_info->m_cost;
 	}
 
+	if (CUtils::FCrossJoin(group->m_best_expr_info->m_expr))
+	{
+		dCost = dCost * 100;
+	}
 	return dCost;
 }
 
