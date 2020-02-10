@@ -37,6 +37,7 @@ using namespace gpopt;
 // how many expressions will we return at the end of the DP phase?
 #define GPOPT_DPV2_JOIN_ORDERING_TOPK 10
 // cost penalty (a factor) for cross product for enumeration algorithms other than GreedyAvoidXProd
+// (value determined by simple experiments on TPC-DS queries)
 #define GPOPT_DPV2_CROSS_JOIN_DEFAULT_PENALTY 5
 // prohibitively high penalty for cross products when in GreedyAvoidXProd
 #define GPOPT_DPV2_CROSS_JOIN_GREEDY_PENALTY 1e9
@@ -306,11 +307,11 @@ CJoinOrderDPv2::GetJoinExprForProperties
 //---------------------------------------------------------------------------
 CJoinOrderDPv2::SExpressionInfo *
 CJoinOrderDPv2::GetJoinExpr
-(
- const SGroupAndExpression &left_child_expr,
- const SGroupAndExpression &right_child_expr,
- SExpressionProperties &result_properties
-)
+	(
+	 const SGroupAndExpression &left_child_expr,
+	 const SGroupAndExpression &right_child_expr,
+	 SExpressionProperties &result_properties
+	)
 {
 	SGroupInfo *left_group_info      = left_child_expr.m_group_info;
 	SExpressionInfo *left_expr_info  = left_child_expr.GetExprInfo();
@@ -386,7 +387,12 @@ CJoinOrderDPv2::GetJoinExpr
 //		Return whether <prop> provides a superset of the properties <other_prop>
 //
 //---------------------------------------------------------------------------
-BOOL CJoinOrderDPv2::IsASupersetOfProperties(SExpressionProperties &prop, SExpressionProperties &other_prop)
+BOOL
+CJoinOrderDPv2::IsASupersetOfProperties
+	(
+	 SExpressionProperties &prop,
+	 SExpressionProperties &other_prop
+	)
 {
 	// are the bits in other_prop a subset of the bits in prop?
 	return 0 == (other_prop.m_join_order & ~prop.m_join_order);
@@ -402,7 +408,12 @@ BOOL CJoinOrderDPv2::IsASupersetOfProperties(SExpressionProperties &prop, SExpre
 //		the other property doesn't provide.
 //
 //---------------------------------------------------------------------------
-BOOL CJoinOrderDPv2::ArePropertiesDisjoint(SExpressionProperties &prop, SExpressionProperties &other_prop)
+BOOL
+CJoinOrderDPv2::ArePropertiesDisjoint
+	(
+	 SExpressionProperties &prop,
+	 SExpressionProperties &other_prop
+	)
 {
 	return	!IsASupersetOfProperties(prop, other_prop) && !IsASupersetOfProperties(other_prop, prop);
 }
@@ -420,7 +431,12 @@ BOOL CJoinOrderDPv2::ArePropertiesDisjoint(SExpressionProperties &prop, SExpress
 //		return value.
 //
 //---------------------------------------------------------------------------
-CJoinOrderDPv2::SGroupAndExpression CJoinOrderDPv2::GetBestExprForProperties(SGroupInfo *group_info, SExpressionProperties &props)
+CJoinOrderDPv2::SGroupAndExpression
+CJoinOrderDPv2::GetBestExprForProperties
+	(
+	 SGroupInfo *group_info,
+	 SExpressionProperties &props
+	)
 {
 	ULONG best_ix = gpos::ulong_max;
 	CDouble best_cost(0.0);
@@ -454,7 +470,12 @@ CJoinOrderDPv2::SGroupAndExpression CJoinOrderDPv2::GetBestExprForProperties(SGr
 //		does not yet exist in the current level or in any higher level.
 //
 //---------------------------------------------------------------------------
-void CJoinOrderDPv2::AddNewPropertyToExpr(SExpressionInfo *expr_info, SExpressionProperties props)
+void
+CJoinOrderDPv2::AddNewPropertyToExpr
+	(
+	 SExpressionInfo *expr_info,
+	 SExpressionProperties props
+	)
 {
 	expr_info->m_properties.Add(props);
 }
@@ -472,7 +493,11 @@ void CJoinOrderDPv2::AddNewPropertyToExpr(SExpressionInfo *expr_info, SExpressio
 //
 //---------------------------------------------------------------------------
 void
-CJoinOrderDPv2::AddExprToGroupIfNecessary(SGroupInfo *group_info, SExpressionInfo *new_expr_info)
+CJoinOrderDPv2::AddExprToGroupIfNecessary
+	(
+	 SGroupInfo *group_info,
+	 SExpressionInfo *new_expr_info
+	)
 {
 	// compute the cost for the new expression
 	ComputeCost(new_expr_info, group_info->m_cardinality);
@@ -540,6 +565,7 @@ CJoinOrderDPv2::AddExprToGroupIfNecessary(SGroupInfo *group_info, SExpressionInf
 				if (new_cost < old_cost)
 				{
 					// case 1
+					continue;
 				}
 				else
 				{
@@ -581,12 +607,14 @@ CJoinOrderDPv2::AddExprToGroupIfNecessary(SGroupInfo *group_info, SExpressionInf
 				else
 				{
 					// case 6
+					continue;
 				}
 			}
 			else
 			{
 				// new expression provides different properties, neither more nor less
 				// case 7
+				continue;
 			}
 		}
 	}
@@ -856,10 +884,10 @@ CJoinOrderDPv2::SearchJoinOrders
 //---------------------------------------------------------------------------
 void
 CJoinOrderDPv2::GreedySearchJoinOrders
-(
- ULONG left_level,
- JoinOrderPropType algo
-)
+	(
+	 ULONG left_level,
+	 JoinOrderPropType algo
+	)
 {
 	ULONG right_level = 1;
 	GPOS_ASSERT(left_level > 0 &&
@@ -904,7 +932,7 @@ CJoinOrderDPv2::GreedySearchJoinOrders
 	if (left_ix >= left_size)
 	{
 		// we didn't find a greedy solution for the left side
-		GPOS_ASSERT(0);
+		GPOS_ASSERT(!"No greedy solution found for the left side");
 		return;
 	}
 
@@ -978,7 +1006,7 @@ CJoinOrderDPv2::GreedySearchJoinOrders
 	else
 	{
 		// we should always find a greedy solution
-		GPOS_ASSERT(0);
+		GPOS_ASSERT(!"We should always find a greedy solution");
 	}
 }
 
@@ -995,7 +1023,12 @@ CJoinOrderDPv2::GreedySearchJoinOrders
 //
 //---------------------------------------------------------------------------
 CJoinOrderDPv2::SGroupInfo *
-CJoinOrderDPv2::LookupOrCreateGroupInfo(SLevelInfo *levelInfo, CBitSet *atoms, SExpressionInfo *stats_expr_info)
+CJoinOrderDPv2::LookupOrCreateGroupInfo
+	(
+	 SLevelInfo *levelInfo,
+	 CBitSet *atoms,
+	 SExpressionInfo *stats_expr_info
+	)
 {
 	SGroupInfo *group_info = m_bitset_to_group_info_map->Find(atoms);
 	SExpressionInfo *real_expr_info_for_stats = stats_expr_info;
@@ -1125,9 +1158,9 @@ CJoinOrderDPv2::SearchBushyJoinOrders
 		return;
 	}
 
-	// try bushy joins of bitsets of level x and y, where
-	// x + y = current_level and x > 1 and y > 1
-	// note that join trees of level 3 and below are never bushy,
+	// Try bushy joins of bitsets of level x and y, where
+	// x + y = current_level and x > 1 and y > 1 and x >= y.
+	// Note that join trees of level 3 and below are never bushy,
 	// so this loop only executes at current_level >= 4
 	for (ULONG right_level = 2; right_level <= current_level/2; right_level++)
 	{
@@ -1179,7 +1212,7 @@ CJoinOrderDPv2::PexprExpand()
 	// for MinCard and GreedyAvoidXProd
 	EnumerateDP();
 	EnumerateQuery();
-	FindMinCardGreedyStartingJoin();
+	FindLowestCardTwoWayJoin();
 	EnumerateMinCard();
 	EnumerateGreedyAvoidXProd();
 
@@ -1274,7 +1307,7 @@ CJoinOrderDPv2::EnumerateQuery()
 
 //---------------------------------------------------------------------------
 //	@function:
-//		CJoinOrderDPv2::FindMinCardGreedyStartingJoin
+//		CJoinOrderDPv2::FindLowestCardTwoWayJoin
 //
 //	@doc:
 //		Find the 2-way join with the smallest cardinality. This is the
@@ -1283,7 +1316,7 @@ CJoinOrderDPv2::EnumerateQuery()
 //
 //---------------------------------------------------------------------------
 void
-CJoinOrderDPv2::FindMinCardGreedyStartingJoin()
+CJoinOrderDPv2::FindLowestCardTwoWayJoin()
 {
 	SLevelInfo *level_2 = Level(2);
 	CDouble min_card(0.0);
@@ -1401,7 +1434,8 @@ CJoinOrderDPv2::GetNextOfTopK()
 //---------------------------------------------------------------------------
 BOOL
 CJoinOrderDPv2::IsRightChildOfNIJ
-	(SGroupInfo *groupInfo,
+	(
+	 SGroupInfo *groupInfo,
 	 CExpression **onPredToUse,
 	 CBitSet **requiredBitsOnLeft
 	)

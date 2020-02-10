@@ -163,6 +163,7 @@ namespace gpopt
 					}
 				}
 
+				// remove the next of the top k elements, sorted ascending by cost
 				E *RemoveBestElement()
 				{
 					if (0 == m_topk->Size() || m_k <= m_num_returned)
@@ -175,6 +176,7 @@ namespace gpopt
 					return RemoveNextElement();
 				}
 
+				// remove the next best element, without the top k limit
 				E *RemoveNextElement()
 				{
 					if (0 == m_topk->Size())
@@ -224,8 +226,9 @@ namespace gpopt
 			// Level 1 describes the "atoms" the leaves of the original NAry join we are transforming.
 			//
 			// Each level consists of a set (an array) of "groups". A group represents what may eventually
-			// become a group in the MEMO structure. It is a set of atoms to be joined (in any order).
-			// the SGroupInfo struct contains the bitset representing the atoms, the cardinality from the
+			// become a group in the MEMO structure, if it is a part of one of the generated top k
+			// expressions at the top level. It is a set of atoms to be joined (in any order).
+			// The SGroupInfo struct contains the bitset representing the atoms, the cardinality from the
 			// derived statistics and an array of SExpressionInfo structs.
 			//
 			// Each SExpressionInfo struct describes an expression in a group. Besides a CExpression,
@@ -287,9 +290,14 @@ namespace gpopt
 			struct SGroupInfo;
 			struct SExpressionInfo;
 
-			// join enumeration algorithm properties, these can be added if an expression satisfies more than one
+			// Join enumeration algorithm properties, these can be added if an expression satisfies more than one
 			// consider these as constants, not as a true enum
-			// note that the numbers (other than the first) must be powers of 2!!!
+			// note that the numbers (other than the first) must be powers of 2,
+			// since we add them to make composite properties!!!
+			// Note also that query, mincard and GreedyAvoidXProd are all greedy algorithms.
+			// Sorry for the confusion with the term "greedy" used in the optimizer_join_order guc
+			// and the CXformExpandNAryJoinGreedy classes, where they refer to one type of greedy
+			// algorithm that avoids cross products.
 			enum JoinOrderPropType
 			{
 				EJoinOrderAny              = 0,  // the overall best solution (used for exhaustive2)
@@ -381,6 +389,7 @@ namespace gpopt
 					m_expr->Release();
 				}
 
+				// cost (use -1 for greedy solutions to ensure we keep all of them)
 				CDouble DCost() { return m_properties.IsGreedy() ? -1.0 : m_cost; }
 				BOOL ChildrenAreEqual(const SExpressionInfo &other) const
 				{ return m_left_child_expr == other.m_left_child_expr && m_right_child_expr == other.m_right_child_expr; }
@@ -594,7 +603,7 @@ namespace gpopt
 
 			void EnumerateDP();
 			void EnumerateQuery();
-			void FindMinCardGreedyStartingJoin();
+			void FindLowestCardTwoWayJoin();
 			void EnumerateMinCard();
 			void EnumerateGreedyAvoidXProd();
 
