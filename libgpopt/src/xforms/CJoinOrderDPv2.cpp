@@ -788,7 +788,7 @@ void CJoinOrderDPv2::RecursivelyMarkEdgesAsUsed(CExpression *expr)
 		}
 
 		// we should not reach the leaves of the tree without finding an edge
-		GPOS_ASSERT(0 < expr->Arity());
+		GPOS_ASSERT(0 < expr->Arity() || CUtils::FScalarConstTrue(expr));
 
 		// this is an AND of multiple edges
 		for (ULONG ul = 0; ul < expr->Arity(); ul++)
@@ -1235,6 +1235,16 @@ CJoinOrderDPv2::PexprExpand()
 void
 CJoinOrderDPv2::EnumerateDP()
 {
+
+	if (
+		GPOS_FTRACE(EopttraceGreedyOnlyInDPv2)||
+		GPOS_FTRACE(EopttraceMinCardOnlyInDPv2) ||
+		GPOS_FTRACE(EopttraceQueryOnlyInDPv2)
+		)
+	{
+		return;
+	}
+
 	COptimizerConfig *optimizer_config = COptCtxt::PoctxtFromTLS()->GetOptimizerConfig();
 	const CHint *phint = optimizer_config->GetHint();
 	ULONG join_order_exhaustive_limit = phint->UlJoinOrderDPLimit();
@@ -1270,6 +1280,7 @@ CJoinOrderDPv2::EnumerateDP()
 		}
 	}
 
+
 	// build n-ary joins from the bottom up, starting with 2-way, 3-way up to m_ulComps-way
 	for (ULONG current_join_level = 2; current_join_level <= m_ulComps; current_join_level++)
 	{
@@ -1298,6 +1309,11 @@ CJoinOrderDPv2::EnumerateDP()
 void
 CJoinOrderDPv2::EnumerateQuery()
 {
+	if (GPOS_FTRACE(EopttraceGreedyOnlyInDPv2)|| GPOS_FTRACE(EopttraceMinCardOnlyInDPv2))
+	{
+		return;
+	}
+
 	for (ULONG current_join_level = 2; current_join_level <= m_ulComps; current_join_level++)
 	{
 		GreedySearchJoinOrders(current_join_level-1, EJoinOrderQuery);
@@ -1318,6 +1334,18 @@ CJoinOrderDPv2::EnumerateQuery()
 void
 CJoinOrderDPv2::FindLowestCardTwoWayJoin()
 {
+	if (GPOS_FTRACE(EopttraceQueryOnlyInDPv2))
+	{
+		return;
+	}
+
+	if (GPOS_FTRACE(EopttraceGreedyOnlyInDPv2)|| GPOS_FTRACE(EopttraceMinCardOnlyInDPv2))
+	{
+		// due to above traceflags being turned on, EnumerateDP() didn't create
+		// the necessary two way join orders. We have to create them here.
+		SearchJoinOrders(1, 1);;
+	}
+
 	SLevelInfo *level_2 = Level(2);
 	CDouble min_card(0.0);
 	SGroupInfo *min_card_group = NULL;
@@ -1355,6 +1383,11 @@ CJoinOrderDPv2::FindLowestCardTwoWayJoin()
 void
 CJoinOrderDPv2::EnumerateMinCard()
 {
+	if (GPOS_FTRACE(EopttraceQueryOnlyInDPv2)|| GPOS_FTRACE(EopttraceGreedyOnlyInDPv2))
+	{
+		return;
+	}
+
 	for (ULONG current_join_level = 3; current_join_level <= m_ulComps; current_join_level++)
 	{
 		GreedySearchJoinOrders(current_join_level-1, EJoinOrderMincard);
@@ -1378,6 +1411,11 @@ CJoinOrderDPv2::EnumerateMinCard()
 void
 CJoinOrderDPv2::EnumerateGreedyAvoidXProd()
 {
+	if (GPOS_FTRACE(EopttraceQueryOnlyInDPv2)|| GPOS_FTRACE(EopttraceMinCardOnlyInDPv2))
+	{
+		return;
+	}
+
 	// avoid cross products by adding a very high penalty to their cost
 	// note that we can still do mandatory cross products
 	m_cross_prod_penalty = GPOPT_DPV2_CROSS_JOIN_GREEDY_PENALTY;
