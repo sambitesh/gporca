@@ -35,6 +35,7 @@
 using namespace gpopt;
 
 // how many expressions will we return at the end of the DP phase?
+// Note that this includes query, mincard and greedy solutions.
 #define GPOPT_DPV2_JOIN_ORDERING_TOPK 10
 // cost penalty (a factor) for cross product for enumeration algorithms other than GreedyAvoidXProd
 // (value determined by simple experiments on TPC-DS queries)
@@ -81,7 +82,6 @@ CJoinOrderDPv2::CJoinOrderDPv2
 	m_top_k_expressions = GPOS_NEW(mp) KHeap<SExpressionInfoArray, SExpressionInfo>
 										(
 										 mp,
-										 this,
 										 GPOPT_DPV2_JOIN_ORDERING_TOPK
 										);
 
@@ -1274,7 +1274,6 @@ CJoinOrderDPv2::EnumerateDP()
 			Level(l)->m_top_k_groups = GPOS_NEW(m_mp) KHeap<SGroupInfoArray, SGroupInfo>
 																	 (
 																	  m_mp,
-																	  this,
 																	  number_of_allowed_groups
 																	 );
 		}

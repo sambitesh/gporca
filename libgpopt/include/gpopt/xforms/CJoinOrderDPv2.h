@@ -57,7 +57,6 @@ namespace gpopt
 			{
 			private:
 
-				CJoinOrderDPv2 *m_join_order;
 				A *m_topk;
 				CMemoryPool *m_mp;
 				ULONG m_k;
@@ -131,9 +130,8 @@ namespace gpopt
 
 			public:
 
-				KHeap(CMemoryPool *mp, CJoinOrderDPv2 *join_order, ULONG k)
+				KHeap(CMemoryPool *mp, ULONG k)
 				:
-				m_join_order(join_order),
 				m_mp(mp),
 				m_k(k),
 				m_is_heapified(false),
