@@ -2029,6 +2029,13 @@ CTranslatorExprToDXLUtils::SetDirectDispatchInfo
 		// direct dispatch not supported for join queries
 		return;
 	}
+
+	// if we have filter not on top of Physical Scan, then we should not
+	// direct dispatch
+	if (!COptCtxt::PoctxtFromTLS()->HasDirectDispatchableFilter())
+	{
+		return ;
+	}
 		
 	CDistributionSpec *pds = (*pdrgpdsBaseTables)[0];
 	
@@ -2620,4 +2627,28 @@ CTranslatorExprToDXLUtils::FMotionHazardSafeOp
 
 	return fMotionHazardSafeOp;
 }
+
+BOOL
+CTranslatorExprToDXLUtils::FDirectDispatchFilter
+	(
+	 CExpression *pexprFilter
+	)
+{
+	GPOS_ASSERT(NULL != pexprFilter);
+
+	CExpression *pexprRelational = (*pexprFilter)[0];
+	COperator *pop = pexprRelational->Pop();
+
+	// a filter can lead to direct dispatch if it is over a scan
+	// or partition selector. If it is over a window, it shouldn't
+	// lead to a direct dispatch
+	return (CUtils::FPhysicalScan(pop) ||
+			COperator::EopPhysicalPartitionSelector == pop->Eopid() ||
+			COperator::EopPhysicalFilter == pop->Eopid() || // nested filters allowed
+			COperator::EopPhysicalComputeScalar == pop->Eopid() // project list allowed
+			);
+
+
+}
+
 // EOF

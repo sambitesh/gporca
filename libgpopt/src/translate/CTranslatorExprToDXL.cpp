@@ -1486,6 +1486,11 @@ CTranslatorExprToDXL::PdxlnFromFilter
 	CExpression *pexprRelational = (*pexprFilter)[0];
 	CExpression *pexprScalar = (*pexprFilter)[1];
 
+	if (!CTranslatorExprToDXLUtils::FDirectDispatchFilter(pexprFilter))
+	{
+		COptCtxt::PoctxtFromTLS()->SetFalseHasDirectDispatchableFilter();
+	}
+
 	// if the filter predicate is a constant TRUE, skip to translating relational child
 	if (CUtils::FScalarConstTrue(pexprScalar))
 	{
