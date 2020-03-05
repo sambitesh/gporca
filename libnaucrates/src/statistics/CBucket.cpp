@@ -45,17 +45,17 @@ CBucket::CBucket
 	m_frequency(frequency),
 	m_distinct(distinct)
 {
-	GPOS_ASSERT(NULL != m_bucket_lower_bound);
-	GPOS_ASSERT(NULL != m_bucket_upper_bound);
-	GPOS_ASSERT(0.0 <= m_frequency && 1.0 >= m_frequency);
-	GPOS_ASSERT(0.0 <= m_distinct);
-
-	// singleton bucket lower and upper bound are closed
-	GPOS_ASSERT_IMP(IsSingleton(), is_lower_closed && is_upper_closed);
-
-	// null values should be in null fraction of the histogram
-	GPOS_ASSERT(!m_bucket_lower_bound->GetDatum()->IsNull());
-	GPOS_ASSERT(!m_bucket_upper_bound->GetDatum()->IsNull());
+//	GPOS_ASSERT(NULL != m_bucket_lower_bound);
+//	GPOS_ASSERT(NULL != m_bucket_upper_bound);
+//	GPOS_ASSERT(0.0 <= m_frequency && 1.0 >= m_frequency);
+//	GPOS_ASSERT(0.0 <= m_distinct);
+//
+//	// singleton bucket lower and upper bound are closed
+//	GPOS_ASSERT_IMP(IsSingleton(), is_lower_closed && is_upper_closed);
+//
+//	// null values should be in null fraction of the histogram
+//	GPOS_ASSERT(!m_bucket_lower_bound->GetDatum()->IsNull());
+//	GPOS_ASSERT(!m_bucket_upper_bound->GetDatum()->IsNull());
 }
 
 //---------------------------------------------------------------------------

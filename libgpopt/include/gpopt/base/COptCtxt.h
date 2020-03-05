@@ -163,7 +163,7 @@ namespace gpopt
 				m_has_replicated_tables = true;
 			}
 
-			void SetFalseHasDirectDispatchableFilter()
+			void ResetHasDirectDispatchableFilter()
 			{
 				m_has_direct_dispatchable_filter = false;
 			}

@@ -2030,8 +2030,7 @@ CTranslatorExprToDXLUtils::SetDirectDispatchInfo
 		return;
 	}
 
-	// if we have filter not on top of Physical Scan, then we should not
-	// direct dispatch
+	// check CTranslatorExprToDXLUtils::FDirectDispatchableFilter
 	if (!COptCtxt::PoctxtFromTLS()->HasDirectDispatchableFilter())
 	{
 		return ;
@@ -2629,7 +2628,7 @@ CTranslatorExprToDXLUtils::FMotionHazardSafeOp
 }
 
 BOOL
-CTranslatorExprToDXLUtils::FDirectDispatchFilter
+CTranslatorExprToDXLUtils::FDirectDispatchableFilter
 	(
 	 CExpression *pexprFilter
 	)

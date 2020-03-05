@@ -588,7 +588,7 @@ namespace gpopt
 
 			// is this Filter node direct dispatchable?
 			static
-			BOOL FDirectDispatchFilter (CExpression *pexprFilter);
+			BOOL FDirectDispatchableFilter (CExpression *pexprFilter);
 	};
 }
 
