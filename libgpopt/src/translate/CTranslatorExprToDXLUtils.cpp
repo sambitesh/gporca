@@ -2031,35 +2031,62 @@ CTranslatorExprToDXLUtils::SetDirectDispatchInfo
 	}
 
 	// check CTranslatorExprToDXLUtils::FDirectDispatchableFilter
-	if (!COptCtxt::PoctxtFromTLS()->HasDirectDispatchableFilter())
+	CExpressionArray *pexprFilterArray = COptCtxt::PoctxtFromTLS()->HasDirectDispatchableFilter();
+	ULONG size = pexprFilterArray->Size();
+
+	if (0 == size)
 	{
 		return ;
 	}
 		
 	CDistributionSpec *pds = (*pdrgpdsBaseTables)[0];
-	
-	if (CDistributionSpec::EdtHashed != pds->Edt())
+
+	// go thru all the filters and see if we have one that can
+	// give us a direct dispatch.
+	// e.g. in the below plan, the CPhysicalFilter is on a non distribution
+	// key but CPhysicalIndexScan is on distribution key. So this plan can be
+	// direct dispatched.
+	//
+	//		+--CPhysicalMotionGather
+	//			+--CPhysicalFilter
+	//			  |--CPhysicalIndexScan
+	//			  |  +--CScalarCmp (=)
+	//			  |     |--CScalarIdent "dist_key"
+	//			  |     +--CScalarConst (5)
+	//			  +--CScalarCmp (=)
+	//			  |--CScalarIdent "non_dist_key"
+	//			  +--CScalarConst (5)
+
+	if (CDistributionSpec::EdtHashed == pds->Edt())
 	{
-		// direct dispatch only supported for scans over hash distributed tables 
-		return;
-	}
-	
-	CPropConstraint *ppc = pexpr->DerivePropertyConstraint();
-	if (NULL == ppc->Pcnstr())
-	{
-		return;
-	}
-		
-	GPOS_ASSERT(NULL != ppc->Pcnstr());
-	
-	CDistributionSpecHashed *pdsHashed = CDistributionSpecHashed::PdsConvert(pds);
-	CExpressionArray *pdrgpexprHashed = pdsHashed->Pdrgpexpr();
-	
-	CDXLDirectDispatchInfo *dxl_direct_dispatch_info = GetDXLDirectDispatchInfo(mp, md_accessor, pdrgpexprHashed, ppc->Pcnstr());
-	
-	if (NULL != dxl_direct_dispatch_info)
-	{
-		dxlnode->SetDirectDispatchInfo(dxl_direct_dispatch_info);
+		// direct dispatch only supported for scans over hash distributed tables
+		for (ULONG i = 0; i < size; i++)
+		{
+			CExpression *pexprFilter = (*pexprFilterArray)[i];
+			CDrvdPropRelational *prop_relational = pexprFilter->GetDrvdPropRelational();
+
+			if (NULL != prop_relational)
+			{
+				CPropConstraint *ppc = prop_relational->GetPropertyConstraint();
+
+				if (NULL != ppc->Pcnstr())
+				{
+					GPOS_ASSERT(NULL != ppc->Pcnstr());
+
+					CDistributionSpecHashed *pdsHashed = CDistributionSpecHashed::PdsConvert(pds);
+					CExpressionArray *pdrgpexprHashed = pdsHashed->Pdrgpexpr();
+
+					CDXLDirectDispatchInfo *dxl_direct_dispatch_info = GetDXLDirectDispatchInfo(mp, md_accessor, pdrgpexprHashed, ppc->Pcnstr());
+
+					if (NULL != dxl_direct_dispatch_info)
+					{
+						dxlnode->SetDirectDispatchInfo(dxl_direct_dispatch_info);
+						break;
+					}
+				}
+			}
+		}
+
 	}
 }
 
@@ -2635,18 +2662,23 @@ CTranslatorExprToDXLUtils::FDirectDispatchableFilter
 {
 	GPOS_ASSERT(NULL != pexprFilter);
 
-	CExpression *pexprRelational = (*pexprFilter)[0];
-	COperator *pop = pexprRelational->Pop();
+	CExpression *pexprChild = (*pexprFilter)[0];
+	COperator *pop = pexprChild->Pop();
 
-	// a filter can lead to direct dispatch if it is over a scan
-	// or partition selector. If it is over a window, it shouldn't
-	// lead to a direct dispatch
-	return (CUtils::FPhysicalScan(pop) ||
-			COperator::EopPhysicalPartitionSelector == pop->Eopid() ||
-			COperator::EopPhysicalFilter == pop->Eopid() || // nested filters allowed
-			COperator::EopPhysicalComputeScalar == pop->Eopid() // project list allowed
-			);
+	// find the first child or grandchild of filter which is not
+	// a Project, Filter or PhysicalComputeScalar (result node)
+	// if it is a scan, then this Filter is direct dispatchable
+	while (
+		   COperator::EopPhysicalPartitionSelector == pop->Eopid() ||
+		   COperator::EopPhysicalFilter == pop->Eopid() ||
+		   COperator::EopPhysicalComputeScalar == pop->Eopid()
+		  )
+	{
+		pexprChild = (*pexprChild)[0];
+		pop = pexprChild->Pop();
+	}
 
+	return (CUtils::FPhysicalScan(pop));
 
 }
 

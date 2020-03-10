@@ -327,10 +327,9 @@ CTranslatorExprToDXL::PdxlnTranslate
 
 	if (0 == ulNonGatherMotions)
 	{
-
 		CTranslatorExprToDXLUtils::SetDirectDispatchInfo(m_mp, m_pmda, dxlnode, pexpr, pdrgpdsBaseTables);
 	}
-	
+
 	pdrgpdsBaseTables->Release();
 	return dxlnode;
 }
@@ -535,6 +534,8 @@ CTranslatorExprToDXL::PdxlnIndexScan
 {
 	GPOS_ASSERT(NULL != pexprIndexScan);
 	CDXLPhysicalProperties *dxl_properties = GetProperties(pexprIndexScan);
+
+	COptCtxt::PoctxtFromTLS()->SetHasDirectDispatchableFilter(pexprIndexScan);
 
 	CDistributionSpec *pds = pexprIndexScan->GetDrvdPropPlan()->Pds();
 	pds->AddRef();
@@ -830,6 +831,8 @@ CTranslatorExprToDXL::PdxlnBitmapTableScan
 {
 	GPOS_ASSERT(NULL != pexprBitmapTableScan);
 	CPhysicalBitmapTableScan *pop = CPhysicalBitmapTableScan::PopConvert(pexprBitmapTableScan->Pop());
+
+	COptCtxt::PoctxtFromTLS()->SetHasDirectDispatchableFilter(pexprBitmapTableScan);
 
 	// translate table descriptor
 	CDXLTableDescr *table_descr = MakeDXLTableDescr(pop->Ptabdesc(), pop->PdrgpcrOutput(), pexprBitmapTableScan->Prpp());
@@ -1486,9 +1489,10 @@ CTranslatorExprToDXL::PdxlnFromFilter
 	CExpression *pexprRelational = (*pexprFilter)[0];
 	CExpression *pexprScalar = (*pexprFilter)[1];
 
-	if (!CTranslatorExprToDXLUtils::FDirectDispatchableFilter(pexprFilter))
+	if (CTranslatorExprToDXLUtils::FDirectDispatchableFilter(pexprFilter))
+
 	{
-		COptCtxt::PoctxtFromTLS()->ResetHasDirectDispatchableFilter();
+		COptCtxt::PoctxtFromTLS()->SetHasDirectDispatchableFilter(pexprFilter);
 	}
 
 	// if the filter predicate is a constant TRUE, skip to translating relational child

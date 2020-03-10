@@ -103,7 +103,7 @@ namespace gpopt
 			BOOL m_has_replicated_tables;
 
 			// does this plan have a direct dispatchable filter
-			BOOL m_has_direct_dispatchable_filter;
+			CExpressionArray  *m_direct_dispatchable_filters;
 
 		public:
 
@@ -163,9 +163,10 @@ namespace gpopt
 				m_has_replicated_tables = true;
 			}
 
-			void ResetHasDirectDispatchableFilter()
+			void SetHasDirectDispatchableFilter(CExpression *filter_expression)
 			{
-				m_has_direct_dispatchable_filter = false;
+				filter_expression->AddRef();
+				m_direct_dispatchable_filters->Append(filter_expression);
 			}
 
 			BOOL HasMasterOnlyTables() const
@@ -183,9 +184,9 @@ namespace gpopt
 				return m_has_replicated_tables;
 			}
 
-			BOOL HasDirectDispatchableFilter() const
+			CExpressionArray* HasDirectDispatchableFilter() const
 			{
-				return m_has_direct_dispatchable_filter;
+				return m_direct_dispatchable_filters;
 			}
 
 			BOOL OptimizeDMLQueryWithSingletonSegment() const

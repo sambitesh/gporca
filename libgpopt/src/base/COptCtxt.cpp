@@ -55,8 +55,7 @@ COptCtxt::COptCtxt
 	m_fDMLQuery(false),
 	m_has_master_only_tables(false),
 	m_has_volatile_or_SQL_func(false),
-	m_has_replicated_tables(false),
-	m_has_direct_dispatchable_filter(true)
+	m_has_replicated_tables(false)
 {
 	GPOS_ASSERT(NULL != mp);
 	GPOS_ASSERT(NULL != col_factory);
@@ -68,6 +67,7 @@ COptCtxt::COptCtxt
 	
 	m_pcteinfo = GPOS_NEW(m_mp) CCTEInfo(m_mp);
 	m_cost_model = optimizer_config->GetCostModel();
+	m_direct_dispatchable_filters = GPOS_NEW(mp) CExpressionArray(mp);
 }
 
 
@@ -88,6 +88,7 @@ COptCtxt::~COptCtxt()
 	m_pcteinfo->Release();
 	m_optimizer_config->Release();
 	CRefCount::SafeRelease(m_pdrgpcrSystemCols);
+	CRefCount::SafeRelease(m_direct_dispatchable_filters);
 }
 
 
