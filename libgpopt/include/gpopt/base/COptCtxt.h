@@ -163,7 +163,7 @@ namespace gpopt
 				m_has_replicated_tables = true;
 			}
 
-			void SetHasDirectDispatchableFilter(CExpression *filter_expression)
+			void AddDirectDispatchableFilterCandidate(CExpression *filter_expression)
 			{
 				filter_expression->AddRef();
 				m_direct_dispatchable_filters->Append(filter_expression);
@@ -184,7 +184,7 @@ namespace gpopt
 				return m_has_replicated_tables;
 			}
 
-			CExpressionArray* HasDirectDispatchableFilter() const
+			CExpressionArray* GetDirectDispatchableFilters() const
 			{
 				return m_direct_dispatchable_filters;
 			}

@@ -2030,8 +2030,7 @@ CTranslatorExprToDXLUtils::SetDirectDispatchInfo
 		return;
 	}
 
-	// check CTranslatorExprToDXLUtils::FDirectDispatchableFilter
-	CExpressionArray *pexprFilterArray = COptCtxt::PoctxtFromTLS()->HasDirectDispatchableFilter();
+	CExpressionArray *pexprFilterArray = COptCtxt::PoctxtFromTLS()->GetDirectDispatchableFilters();
 	ULONG size = pexprFilterArray->Size();
 
 	if (0 == size)
