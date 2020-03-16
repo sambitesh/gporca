@@ -2062,28 +2062,24 @@ CTranslatorExprToDXLUtils::SetDirectDispatchInfo
 		for (ULONG i = 0; i < size; i++)
 		{
 			CExpression *pexprFilter = (*pexprFilterArray)[i];
-			CDrvdPropRelational *prop_relational = pexprFilter->GetDrvdPropRelational();
+			CPropConstraint *ppc = pexprFilter->DerivePropertyConstraint();
 
-			if (NULL != prop_relational)
+			if (NULL != ppc->Pcnstr())
 			{
-				CPropConstraint *ppc = prop_relational->GetPropertyConstraint();
+				GPOS_ASSERT(NULL != ppc->Pcnstr());
 
-				if (NULL != ppc->Pcnstr())
+				CDistributionSpecHashed *pdsHashed = CDistributionSpecHashed::PdsConvert(pds);
+				CExpressionArray *pdrgpexprHashed = pdsHashed->Pdrgpexpr();
+
+				CDXLDirectDispatchInfo *dxl_direct_dispatch_info = GetDXLDirectDispatchInfo(mp, md_accessor, pdrgpexprHashed, ppc->Pcnstr());
+
+				if (NULL != dxl_direct_dispatch_info)
 				{
-					GPOS_ASSERT(NULL != ppc->Pcnstr());
-
-					CDistributionSpecHashed *pdsHashed = CDistributionSpecHashed::PdsConvert(pds);
-					CExpressionArray *pdrgpexprHashed = pdsHashed->Pdrgpexpr();
-
-					CDXLDirectDispatchInfo *dxl_direct_dispatch_info = GetDXLDirectDispatchInfo(mp, md_accessor, pdrgpexprHashed, ppc->Pcnstr());
-
-					if (NULL != dxl_direct_dispatch_info)
-					{
-						dxlnode->SetDirectDispatchInfo(dxl_direct_dispatch_info);
-						break;
-					}
+					dxlnode->SetDirectDispatchInfo(dxl_direct_dispatch_info);
+					break;
 				}
 			}
+
 		}
 
 	}
