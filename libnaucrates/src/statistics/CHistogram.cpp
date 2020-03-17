@@ -740,7 +740,9 @@ CHistogram::MakeJoinHistogramNormalize
 	// TODO: legacy code, apply the Ramakrishnan and Gehrke method again on the entire table,
 	// ignoring the computation we did on each histogram bucket in
 	// CBucket::MakeBucketIntersect()
-	if (!CJoinStatsProcessor::ComputeScaleFactorFromHistogramBuckets())
+	if (!CJoinStatsProcessor::ComputeScaleFactorFromHistogramBuckets() &&
+		!GPOS_FTRACE(EopttraceComputeScaleFactorFromHistogramBuckets)
+	   )
 	{
 		*scale_factor = std::max
 							(

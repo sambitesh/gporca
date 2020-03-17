@@ -227,6 +227,10 @@ namespace gpos
 
 		// Use calibrated bitmap index cost model
 		EopttraceCalibratedBitmapIndexCostModel = 104007,
+
+		// Use scale_factor derived from histogram buckets
+		// see CBucket::MakeBucketIntersect()
+		EopttraceComputeScaleFactorFromHistogramBuckets = 104008,
 		///////////////////////////////////////////////////////
 		/////////// constant expression evaluator flags ///////
 		///////////////////////////////////////////////////////
